@@ -6,7 +6,7 @@
   <title>Meso. Game - De 16 Ani Am Crescut Impreuna</title>
   <meta name="description" content="Meso. Game - De 16 Ani Am Crescut Impreuna. Zboara printre lumanarile aniversare, prinde Doner Kebab Mare si sarbatoreste oferta 1+1 Gratuit!">
   <link rel="icon" type="image/png" href="bird_clean.png">
-  <link rel="stylesheet" href="style.css?v=16.5">
+  <link rel="stylesheet" href="style.css?v=20.0">
 </head>
 <body>
 
@@ -53,6 +53,7 @@
             <span class="celeb-icon">✨</span>
           </div>
         </div>
+
 
         <!-- START SCREEN (Coperta Festiva: Pasarea Meso Zboara Liber in Aer, Header Top si Card Buton Jos) -->
         <div class="screen-modal" id="screen-start">
@@ -103,39 +104,68 @@
           </div>
         </div>
 
-        <!-- GAME OVER SCREEN (Refacut complet: curat, fara reclame inghesuite, zona moderna de butoane arcade) -->
+        <!-- GAME OVER SCREEN (Super Fun, Arcade Style, Fără Lumanari, Fără Emoji Doner) -->
         <div class="screen-modal hidden" id="screen-gameover">
           <div class="gameover-card">
+            <!-- Decorative Fun Corner Sparkles -->
+            <div class="card-sparkle sparkle-top-left">✨</div>
+            <div class="card-sparkle sparkle-top-right">⭐</div>
+
             <!-- Top Trophy & Rank Header -->
             <div class="gameover-header">
               <div class="gameover-trophy-ring">
                 <span class="gameover-trophy-icon">🏆</span>
+                <span class="trophy-sparkle-mini">✨</span>
               </div>
               <h2 class="gameover-title">SCOR FINAL</h2>
               <div class="gameover-rank-pill" id="gameover-rank">🥇 KEBAB MASTER</div>
             </div>
 
-            <!-- Clean Stats Box -->
-            <div class="stats-royal-box">
-              <div class="stat-item-col">
-                <span class="stat-title">LUMANARI</span>
-                <span class="stat-big-num" id="final-score">0</span>
+            <!-- 3 Fun Arcade Stat Pods (Zero Lumanari, Zero Emoji Doner) -->
+            <div class="stats-arcade-grid">
+              <!-- Pod 1: Scor -->
+              <div class="stat-pod stat-pod-blue">
+                <div class="stat-pod-header">
+                  <span class="stat-mini-icon">🎯</span>
+                  <span class="stat-label">SCOR</span>
+                </div>
+                <div class="stat-big-num" id="final-score">0</div>
+                <span class="stat-subtag">puncte</span>
               </div>
-              <div class="stat-divider"></div>
-              <div class="stat-item-col">
-                <span class="stat-title">DONERI 🥙</span>
-                <span class="stat-big-num stat-gold" id="final-doners">0</span>
+
+              <!-- Pod 2: Doneri (Meso Coin, No emoji) -->
+              <div class="stat-pod stat-pod-gold">
+                <div class="stat-pod-header">
+                  <img class="stat-mini-coin" src="doner_clean.png" alt="Döner">
+                  <span class="stat-label">DÖNERI</span>
+                </div>
+                <div class="stat-big-num stat-gold" id="final-doners">0</div>
+                <span class="stat-subtag">colectați</span>
               </div>
-              <div class="stat-divider"></div>
-              <div class="stat-item-col">
-                <span class="stat-title">RECORD</span>
-                <span class="stat-big-num stat-amber" id="best-score">0</span>
+
+              <!-- Pod 3: Record -->
+              <div class="stat-pod stat-pod-amber">
+                <div class="stat-pod-header">
+                  <span class="stat-mini-icon">👑</span>
+                  <span class="stat-label">RECORD</span>
+                </div>
+                <div class="stat-big-num stat-amber" id="best-score">0</div>
+                <span class="stat-subtag">personal</span>
               </div>
             </div>
 
             <!-- New Record Toast (dynamically visible) -->
             <div id="new-record-alert" class="new-record-pill hidden">
-              <span>🎉 NOU RECORD PERSONAL! 🚀</span>
+              <span>🎉 NOU RECORD PERSONAL! 🔥</span>
+            </div>
+
+            <!-- Last Unlocked Restaurant Location Badge -->
+            <div class="last-location-card" id="last-location-container">
+              <div class="loc-card-badge">
+                <span class="loc-pin">📍</span>
+                <span class="loc-mini-title">DESTINAȚIE ATINSĂ</span>
+              </div>
+              <span class="loc-mini-name" id="gameover-last-loc">Start Călătorie</span>
             </div>
 
             <!-- ZONA DE BUTOANE REFACUTA COMPLET (Arcade Style Buttons) -->
@@ -210,6 +240,6 @@
       document.querySelectorAll('img[src="doner_clean.png"]').forEach(img => img.src = GAME_ASSETS.doner);
     }
   </script>
-  <script src="game.js?v=16.5"></script>
+  <script src="game.js?v=20.0"></script>
 </body>
 </html>

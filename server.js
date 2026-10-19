@@ -14,7 +14,7 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   let reqPath = req.url.split('?')[0];
-  if (reqPath === '/') reqPath = '/game.html';
+  if (reqPath === '/') reqPath = '/index.html';
   const filePath = path.join(__dirname, decodeURIComponent(reqPath));
 
   fs.readFile(filePath, (err, data) => {

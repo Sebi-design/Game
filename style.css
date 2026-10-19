@@ -214,6 +214,85 @@ html, body {
   visibility: hidden;
 }
 
+/* ----------------------------------------------------
+   MESOPOTAMIA RESTAURANT MILESTONE TOAST (Eliminat de sus conform cerinței - apare DOAR jos pe tabla de pe drum)
+   ---------------------------------------------------- */
+#meso-location-toast {
+  display: none !important;
+}
+
+.location-toast-card {
+  background: linear-gradient(135deg, rgba(22, 60, 34, 0.96) 0%, rgba(10, 24, 14, 0.98) 100%);
+  border: 2px solid #ffc300;
+  border-radius: 18px;
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 
+    0 10px 28px rgba(0, 0, 0, 0.85),
+    0 0 20px rgba(255, 195, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  animation: toastGlow 2.2s ease-in-out infinite;
+}
+
+@keyframes toastGlow {
+  0%, 100% { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85), 0 0 15px rgba(255, 195, 0, 0.4); }
+  50% { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.9), 0 0 26px rgba(255, 195, 0, 0.75); }
+}
+
+.loc-pin-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  animation: pinBounce 1.2s ease-in-out infinite;
+}
+
+@keyframes pinBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.loc-text-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.loc-subtitle {
+  font-family: var(--font-brand);
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #ffd60a;
+  letter-spacing: 1.2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.loc-name {
+  font-family: var(--font-brand);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.loc-star-badge {
+  background: var(--meso-gold-foil);
+  color: #2b1702;
+  font-family: var(--font-chunky);
+  font-size: 13px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+}
+
 @keyframes celebFloat {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50% { transform: translateX(-50%) translateY(-5px); }
@@ -289,11 +368,11 @@ html, body {
 /* 1. Top Anniversary Header Zone */
 .start-top-header {
   pointer-events: auto;
-  margin-top: 50px;
-  background: rgba(18, 25, 44, 0.82);
-  border: 2px solid rgba(255, 195, 0, 0.55);
-  border-radius: 22px;
-  padding: 8px 20px 6px;
+  margin-top: max(38px, env(safe-area-inset-top, 38px));
+  background: rgba(18, 25, 44, 0.88);
+  border: 2px solid rgba(255, 195, 0, 0.65);
+  border-radius: 20px;
+  padding: 6px 16px 5px;
   text-align: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(8px);
@@ -303,13 +382,13 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   line-height: 1;
 }
 
 .cover-de {
   font-family: var(--font-brand);
-  font-size: 26px;
+  font-size: clamp(18px, 4.5vh, 24px);
   font-weight: 900;
   color: #ffffff;
   letter-spacing: 1px;
@@ -323,18 +402,18 @@ html, body {
 
 .cover-gold-16 {
   font-family: var(--font-chunky);
-  font-size: 52px;
+  font-size: clamp(34px, 8.5vh, 48px);
   line-height: 0.9;
   background: linear-gradient(180deg, #fff7b8 0%, #ffc300 40%, #ff9500 70%, #d48b00 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 1.8px #261605;
+  -webkit-text-stroke: 1.6px #261605;
   filter: drop-shadow(0 3px 0 #281402) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
 }
 
 .cover-ani {
   font-family: var(--font-brand);
-  font-size: 26px;
+  font-size: clamp(18px, 4.5vh, 24px);
   font-weight: 900;
   color: #ffc300;
   letter-spacing: 1px;
@@ -343,10 +422,10 @@ html, body {
 
 .cover-tagline {
   font-family: var(--font-brand);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 900;
   color: #ffffff;
-  letter-spacing: 2px;
+  letter-spacing: 1.8px;
   margin-top: 2px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
 }
@@ -354,25 +433,26 @@ html, body {
 /* 2. Middle Open Flight Stage: Pasărea este 100% vizibilă zburând! */
 .start-flight-hero-zone {
   flex: 1;
+  min-height: 35px;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
   pointer-events: none;
 }
 
 .tap-hint-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  background: rgba(15, 23, 42, 0.78);
-  border: 1.5px solid rgba(255, 214, 10, 0.6);
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1.5px solid rgba(255, 214, 10, 0.65);
   border-radius: 999px;
-  padding: 5px 14px;
+  padding: 4px 12px;
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #ffd60a;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
@@ -381,7 +461,7 @@ html, body {
 }
 
 .tap-hint-hand {
-  font-size: 14px;
+  font-size: 13px;
   animation: handBounce 1.4s ease-in-out infinite;
 }
 
@@ -399,11 +479,12 @@ html, body {
 .start-bottom-card {
   pointer-events: auto;
   width: 96%;
-  max-width: 360px;
-  background: linear-gradient(180deg, rgba(20, 28, 48, 0.94) 0%, rgba(11, 16, 30, 0.97) 100%);
-  border: 2.5px solid #b8860b;
-  border-radius: 24px;
-  padding: 13px 16px 15px;
+  max-width: 350px;
+  background: linear-gradient(180deg, rgba(20, 28, 48, 0.95) 0%, rgba(11, 16, 30, 0.98) 100%);
+  border: 2px solid #b8860b;
+  border-radius: 20px;
+  padding: 10px 14px 12px;
+  margin-bottom: max(4px, env(safe-area-inset-bottom, 4px));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -420,12 +501,12 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .brand-meso {
   font-family: var(--font-brand);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 900;
   color: #ffffff;
   letter-spacing: -0.5px;
@@ -438,10 +519,10 @@ html, body {
 
 .brand-game-badge {
   font-family: var(--font-chunky);
-  font-size: 16px;
+  font-size: 15px;
   background: var(--meso-gold-foil);
   color: #2b1702;
-  padding: 2px 9px;
+  padding: 2px 8px;
   border-radius: 999px;
   border: 1.5px solid #ffffff;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -452,9 +533,9 @@ html, body {
   width: 100%;
   background: linear-gradient(135deg, rgba(224, 43, 32, 0.22) 0%, rgba(255, 195, 0, 0.15) 100%);
   border: 1.5px solid rgba(255, 195, 0, 0.45);
-  border-radius: 14px;
-  padding: 7px 12px;
-  margin-bottom: 11px;
+  border-radius: 12px;
+  padding: 5px 10px;
+  margin-bottom: 8px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
 }
 
@@ -463,25 +544,25 @@ html, body {
   background: #e02b20;
   color: #ffffff;
   font-family: var(--font-brand);
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 900;
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: 1px 7px;
+  border-radius: 5px;
   margin-bottom: 2px;
   box-shadow: 0 2px 5px rgba(224, 43, 32, 0.5);
 }
 
 .promo-title {
   font-family: var(--font-brand);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   color: #ffd60a;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
 }
 
 .promo-date {
   font-family: var(--font-ui);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   color: #e2e8f0;
   margin-top: 1px;
@@ -490,27 +571,27 @@ html, body {
 .start-actions-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 
 .record-pill-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: rgba(255, 255, 255, 0.08);
   border: 1.5px solid rgba(255, 255, 255, 0.2);
   border-radius: 999px;
-  padding: 8px 12px;
+  padding: 7px 11px;
   font-family: var(--font-chunky);
-  font-size: 13px;
+  font-size: 12px;
   color: #ffffff;
   flex-shrink: 0;
 }
 
 .record-pill-badge .record-val {
   color: #ffd60a;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 /* Golden Juicy Button with 3D shine */
@@ -518,12 +599,12 @@ html, body {
   position: relative;
   overflow: hidden;
   flex: 1;
-  padding: 10px 14px;
+  padding: 9px 12px;
   background: linear-gradient(180deg, #fff066 0%, #ffb703 48%, #fb8500 100%);
   border: 2.5px solid #261605;
   border-radius: 999px;
   box-shadow: 
-    0 5px 0 #1f1103,
+    0 4px 0 #1f1103,
     0 10px 18px rgba(0, 0, 0, 0.45),
     inset 0 2px 0 rgba(255, 255, 255, 0.7);
   display: flex;
@@ -531,7 +612,7 @@ html, body {
   justify-content: center;
   gap: 8px;
   font-family: var(--font-chunky);
-  font-size: 18px;
+  font-size: 16px;
   color: #261402;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   cursor: pointer;
@@ -540,7 +621,7 @@ html, body {
 }
 
 .tap-to-fly-btn .btn-emoji {
-  font-size: 22px;
+  font-size: 20px;
 }
 
 .tap-to-fly-btn::after {
@@ -577,7 +658,7 @@ html, body {
 }
 
 /* ----------------------------------------------------
-   GAME OVER MODAL (Refăcut Complet: Curat, Fără Reclame, Butoane Arcade)
+   GAME OVER MODAL (Super Fun Arcade Edition: Meso Gold, Pods 3D, Fără Lumanari, Fără Emoji)
    ---------------------------------------------------- */
 #screen-gameover {
   justify-content: center;
@@ -585,24 +666,60 @@ html, body {
 
 .gameover-card {
   pointer-events: auto;
+  position: relative;
   width: 92%;
   max-width: 350px;
-  background: linear-gradient(180deg, #182238 0%, #0d1424 100%);
-  border: 3px solid #b8860b;
+  background: radial-gradient(120% 120% at 50% 0%, #1d2c4b 0%, #10192e 45%, #080d19 100%);
+  border: 2.8px solid #ffc300;
   box-shadow: 
-    0 0 0 1px rgba(255, 224, 102, 0.5),
-    0 22px 60px rgba(0, 0, 0, 0.9),
-    0 0 35px rgba(255, 195, 0, 0.35);
+    0 0 0 2px rgba(255, 195, 0, 0.35),
+    0 24px 65px rgba(0, 0, 0, 0.9),
+    0 0 45px rgba(255, 195, 0, 0.3),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.4);
   border-radius: 28px;
-  padding: 22px 18px 20px;
+  padding: 24px 18px 20px;
   text-align: center;
-  backdrop-filter: blur(12px);
-  animation: cardPopIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: blur(14px);
+  animation: cardArcadePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes cardPopIn {
-  0% { transform: scale(0.85); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+@keyframes cardArcadePop {
+  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Fun Animated Corner Sparkles */
+.card-sparkle {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  z-index: 5;
+}
+
+.sparkle-top-left {
+  top: -13px;
+  left: 14px;
+  font-size: 22px;
+  filter: drop-shadow(0 0 8px rgba(255, 220, 100, 0.9));
+  animation: sparkleFloat 2.2s ease-in-out infinite alternate;
+}
+
+.sparkle-top-right {
+  top: -11px;
+  right: 14px;
+  font-size: 20px;
+  filter: drop-shadow(0 0 8px rgba(255, 200, 50, 0.9));
+  animation: sparkleFloat 2.8s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes sparkleFloat {
+  0% { transform: translateY(0) rotate(-6deg) scale(0.95); opacity: 0.85; }
+  100% { transform: translateY(-4px) rotate(8deg) scale(1.15); opacity: 1; }
+}
+
+@keyframes sparkleTwinkle {
+  0%, 100% { transform: scale(0.9) rotate(0deg); opacity: 0.7; }
+  50% { transform: scale(1.3) rotate(20deg); opacity: 1; }
 }
 
 .gameover-header {
@@ -613,109 +730,241 @@ html, body {
 }
 
 .gameover-trophy-ring {
-  width: 52px;
-  height: 52px;
+  position: relative;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 195, 0, 0.25) 0%, rgba(255, 195, 0, 0.05) 70%, transparent 100%);
-  border: 2px solid #ffc300;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.32) 0%, rgba(255, 150, 0, 0.12) 70%, transparent 100%);
+  border: 2.5px solid #ffd700;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 6px;
-  box-shadow: 0 0 18px rgba(255, 195, 0, 0.5);
+  box-shadow: 0 0 22px rgba(255, 195, 0, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.35);
+  animation: trophyFloat 3s ease-in-out infinite;
+}
+
+@keyframes trophyFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .gameover-trophy-icon {
-  font-size: 26px;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  font-size: 28px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+}
+
+.trophy-sparkle-mini {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  font-size: 14px;
+  animation: sparkleTwinkle 1.6s ease-in-out infinite;
 }
 
 .gameover-title {
   font-family: var(--font-chunky);
-  font-size: 32px;
-  background: linear-gradient(180deg, #ffffff 15%, #ffc300 65%, #ff9500 100%);
+  font-size: 34px;
+  letter-spacing: 0.8px;
+  background: linear-gradient(180deg, #ffffff 12%, #ffe066 45%, #ffb703 80%, #fb8500 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 1.8px #261605;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+  -webkit-text-stroke: 1.8px #221203;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.7));
   margin-bottom: 6px;
 }
 
 .gameover-rank-pill {
   display: inline-block;
-  background: rgba(255, 195, 0, 0.15);
-  border: 1.5px solid #ffc300;
+  background: linear-gradient(90deg, rgba(255, 195, 0, 0.18), rgba(255, 225, 110, 0.3), rgba(255, 195, 0, 0.18));
+  border: 1.5px solid rgba(255, 220, 100, 0.75);
   border-radius: 999px;
-  padding: 3px 12px;
+  padding: 4px 14px;
   font-family: var(--font-brand);
-  font-size: 12px;
-  font-weight: 800;
-  color: #ffd60a;
-  letter-spacing: 0.5px;
+  font-size: 11.5px;
+  font-weight: 900;
+  color: #fff275;
+  letter-spacing: 0.8px;
+  box-shadow: 0 2px 10px rgba(255, 195, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
-/* Stats Box */
-.stats-royal-box {
-  background: rgba(0, 0, 0, 0.45);
-  border: 1.5px solid rgba(255, 255, 255, 0.14);
-  border-radius: 18px;
-  padding: 12px 10px;
-  margin: 12px 0 14px;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
+/* 3 Fun Arcade Stat Pods (Zero Lumanari, Zero Emoji Doner) */
+.stats-arcade-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 14px 0 12px;
+  width: 100%;
 }
 
-.stat-item-col {
+.stat-pod {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
+  justify-content: center;
+  padding: 10px 4px 8px;
+  border-radius: 16px;
+  position: relative;
+  transition: transform 0.18s ease;
 }
 
-.stat-divider {
-  width: 1px;
-  height: 38px;
-  background: rgba(255, 255, 255, 0.16);
+.stat-pod:hover {
+  transform: translateY(-2px);
 }
 
-.stat-title {
+.stat-pod-blue {
+  background: linear-gradient(180deg, rgba(26, 44, 78, 0.75) 0%, rgba(13, 23, 44, 0.88) 100%);
+  border: 1.5px solid rgba(100, 160, 255, 0.45);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.stat-pod-gold {
+  background: linear-gradient(180deg, rgba(74, 52, 10, 0.78) 0%, rgba(36, 25, 4, 0.9) 100%);
+  border: 1.5px solid rgba(255, 205, 60, 0.6);
+  box-shadow: 0 4px 16px rgba(255, 180, 0, 0.25), inset 0 1px 0 rgba(255, 235, 140, 0.35);
+}
+
+.stat-pod-amber {
+  background: linear-gradient(180deg, rgba(72, 33, 11, 0.78) 0%, rgba(35, 15, 4, 0.9) 100%);
+  border: 1.5px solid rgba(255, 130, 45, 0.6);
+  box-shadow: 0 4px 14px rgba(230, 80, 20, 0.22), inset 0 1px 0 rgba(255, 180, 120, 0.3);
+}
+
+.stat-pod-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+
+.stat-mini-icon {
+  font-size: 11px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+
+.stat-mini-coin {
+  width: 17px;
+  height: 17px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
+}
+
+.stat-label {
+  font-family: var(--font-brand);
   font-size: 10px;
-  font-weight: 800;
-  color: var(--meso-gold);
-  letter-spacing: 0.8px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  color: #cbd5e1;
+  text-transform: uppercase;
+}
+
+.stat-pod-gold .stat-label {
+  color: #ffe066;
+}
+
+.stat-pod-amber .stat-label {
+  color: #ffb703;
 }
 
 .stat-big-num {
   font-family: var(--font-chunky);
-  font-size: 28px;
+  font-size: 27px;
+  line-height: 1.05;
+  margin: 1px 0;
   color: #ffffff;
-  line-height: 1.1;
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.75);
 }
 
 .stat-big-num.stat-gold {
-  color: #ffd60a;
+  color: #ffe14a;
+  text-shadow: 0 2px 8px rgba(255, 200, 0, 0.45), 0 1px 0 #3a2800;
 }
 
 .stat-big-num.stat-amber {
   color: #ff9e00;
+  text-shadow: 0 2px 8px rgba(255, 120, 0, 0.45), 0 1px 0 #361400;
+}
+
+.stat-subtag {
+  font-family: var(--font-brand);
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.48);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .new-record-pill {
   background: linear-gradient(90deg, #e02b20, #ff9e00);
   border-radius: 999px;
-  padding: 4px 14px;
+  padding: 5px 14px;
   font-family: var(--font-brand);
   font-size: 12px;
   font-weight: 900;
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(224, 43, 32, 0.6);
+  box-shadow: 0 4px 14px rgba(224, 43, 32, 0.65);
   margin-bottom: 12px;
   animation: pulseHint 1.5s infinite;
 }
 
 .new-record-pill.hidden {
   display: none;
+}
+
+/* Last Unlocked Restaurant Location Ticket */
+.last-location-card {
+  width: 100%;
+  background: linear-gradient(135deg, rgba(255, 195, 0, 0.12) 0%, rgba(20, 30, 50, 0.7) 100%);
+  border: 1.5px solid rgba(255, 195, 0, 0.45);
+  border-radius: 14px;
+  padding: 7px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 220, 100, 0.22);
+}
+
+.loc-card-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 2px;
+}
+
+.loc-pin {
+  font-size: 11px;
+  animation: bouncePin 1.8s ease-in-out infinite;
+}
+
+@keyframes bouncePin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.loc-mini-title {
+  font-family: var(--font-brand);
+  font-size: 9.5px;
+  font-weight: 900;
+  color: #ffc300;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+
+.loc-mini-name {
+  font-family: var(--font-brand);
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Refăcut Zona de Butoane (Arcade Style Action Buttons) */
@@ -942,38 +1191,80 @@ html, body {
   }
 }
 
-@media (max-height: 680px) {
-  .cover-card {
-    padding: 16px 16px 14px;
+@media (max-height: 720px) {
+  .start-top-header {
+    margin-top: max(32px, env(safe-area-inset-top, 32px));
+    padding: 5px 14px 4px;
   }
   .cover-gold-16 {
-    font-size: 48px;
+    font-size: 36px;
   }
   .cover-de, .cover-ani {
-    font-size: 24px;
+    font-size: 19px;
   }
   .cover-tagline {
-    font-size: 11px;
-    margin-bottom: 8px;
+    font-size: 10px;
+    letter-spacing: 1.5px;
   }
-  .cover-brand-row {
-    margin-bottom: 10px;
+  .start-flight-hero-zone {
+    min-height: 25px;
+    padding-bottom: 4px;
+  }
+  .tap-hint-pill {
+    padding: 3px 10px;
+    font-size: 10.5px;
+  }
+  .start-bottom-card {
+    padding: 8px 12px 10px;
   }
   .brand-meso {
-    font-size: 28px;
+    font-size: 20px;
   }
   .cover-promo-box {
-    padding: 6px 10px;
-    margin-bottom: 10px;
+    padding: 4px 8px;
+    margin-bottom: 6px;
+  }
+  .promo-title {
+    font-size: 11px;
+  }
+  .promo-date {
+    font-size: 8.5px;
   }
   .record-pill-badge {
-    padding: 4px 14px;
-    margin-bottom: 12px;
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+  .record-pill-badge .record-val {
     font-size: 13px;
   }
   .tap-to-fly-btn {
-    padding: 10px 16px;
-    font-size: 19px;
+    padding: 7px 10px;
+    font-size: 14.5px;
+  }
+  .tap-to-fly-btn .btn-emoji {
+    font-size: 17px;
+  }
+}
+
+@media (max-height: 560px) {
+  .start-top-header {
+    margin-top: 26px;
+    padding: 3px 10px;
+  }
+  .cover-gold-16 {
+    font-size: 28px;
+  }
+  .cover-de, .cover-ani {
+    font-size: 16px;
+  }
+  .cover-tagline {
+    display: none;
+  }
+  .cover-promo-box {
+    display: none;
+  }
+  .start-bottom-card {
+    padding: 6px 10px 8px;
   }
 }
 

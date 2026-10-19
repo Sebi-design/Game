@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Meso. Game - De 16 Ani Am Crescut Impreuna</title>
+  <meta name="description" content="Meso. Game - De 16 Ani Am Crescut Impreuna. Zboara printre lumanarile aniversare, prinde Doner Kebab Mare si sarbatoreste oferta 1+1 Gratuit!">
+  <link rel="icon" type="image/png" href="bird_clean.png">
+  <link rel="stylesheet" href="style.css?v=20.0">
+</head>
+<body>
+
+  <!-- Master App Container -->
+  <div id="app-wrapper">
+
+    <!-- Game Mobile/Arcade Frame -->
+    <div id="game-frame">
+      <!-- 2D High-Performance Canvas -->
+      <canvas id="game-canvas"></canvas>
+
+      <!-- UI Overlay Layer -->
+      <div id="ui-layer">
+        <!-- Top Clean HUD: Minimal, Professional, No Clutter! -->
+        <div id="hud">
+          <div class="hud-left">
+            <!-- Single Clean Doner Pill -->
+            <div class="hud-pill" id="doner-pill" title="Doner Mare Colectat">
+              <img class="mini-food-img" src="doner_clean.png" alt="Doner">
+              <span id="hud-doner-count">0</span>
+            </div>
+          </div>
+
+          <div class="hud-right">
+            <!-- Pause Button -->
+            <button class="circle-btn" id="btn-pause" title="Pauza (P / Esc)" aria-label="Pause">
+              <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <!-- Sound Button -->
+            <button class="circle-btn" id="btn-mute" title="Sunet / Muzica (M)" aria-label="Mute">
+              <svg id="svg-sound" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Meso 16 Ani Celebration Toast Banner (Triggers at score 16, game continues!) -->
+        <div id="meso-16-celebration" class="hidden">
+          <div class="celeb-card">
+            <span class="celeb-icon">🎂</span>
+            <div class="celeb-text-col">
+              <span class="celeb-main">La multi ani Meso.!</span>
+              <span class="celeb-sub">DE 16 ANI AM CRESCUT IMPREUNA 🎉</span>
+            </div>
+            <span class="celeb-icon">✨</span>
+          </div>
+        </div>
+
+
+        <!-- START SCREEN (Coperta Festiva: Pasarea Meso Zboara Liber in Aer, Header Top si Card Buton Jos) -->
+        <div class="screen-modal" id="screen-start">
+          <!-- Top Anniversary Header Zone -->
+          <div class="start-top-header">
+            <div class="cover-anniversary-header">
+              <span class="cover-de">DE</span>
+              <div class="cover-gold-16-wrapper">
+                <span class="cover-gold-16">16</span>
+              </div>
+              <span class="cover-ani">ANI</span>
+            </div>
+            <div class="cover-tagline">AM CRESCUT IMPREUNA</div>
+          </div>
+
+          <!-- Middle Open Flight Zone: Pasarea zboara liber pe ecran in vazul jucatorului! -->
+          <div class="start-flight-hero-zone">
+            <div class="tap-hint-pill">
+              <span class="tap-hint-hand">👆</span>
+              <span>Atinge ecranul pentru a zbura!</span>
+            </div>
+          </div>
+
+          <!-- Bottom Action Card -->
+          <div class="start-bottom-card">
+            <div class="cover-brand-row">
+              <span class="brand-meso">Meso<span class="brand-dot">.</span></span>
+            </div>
+
+            <div class="cover-promo-box">
+              <div class="promo-highlight-badge">1+1 GRATUIT</div>
+              <div class="promo-title">DONER KEBAB MARE</div>
+              <div class="promo-date">DOAR PE 31 OCTOMBRIE • IN TOATA TARA!</div>
+            </div>
+
+            <div class="start-actions-row">
+              <div class="record-pill-badge">
+                <span>🏆</span>
+                <span>Record:</span>
+                <span class="record-val" id="royal-record-val">0</span>
+              </div>
+
+              <button class="tap-to-fly-btn" id="btn-start">
+                <span>HAI LA ZBOR!</span>
+                <span class="btn-emoji">🚀</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- GAME OVER SCREEN (Super Fun, Arcade Style, Fără Lumanari, Fără Emoji Doner) -->
+        <div class="screen-modal hidden" id="screen-gameover">
+          <div class="gameover-card">
+            <!-- Decorative Fun Corner Sparkles -->
+            <div class="card-sparkle sparkle-top-left">✨</div>
+            <div class="card-sparkle sparkle-top-right">⭐</div>
+
+            <!-- Top Trophy & Rank Header -->
+            <div class="gameover-header">
+              <div class="gameover-trophy-ring">
+                <span class="gameover-trophy-icon">🏆</span>
+                <span class="trophy-sparkle-mini">✨</span>
+              </div>
+              <h2 class="gameover-title">SCOR FINAL</h2>
+              <div class="gameover-rank-pill" id="gameover-rank">🥇 KEBAB MASTER</div>
+            </div>
+
+            <!-- 3 Fun Arcade Stat Pods (Zero Lumanari, Zero Emoji Doner) -->
+            <div class="stats-arcade-grid">
+              <!-- Pod 1: Scor -->
+              <div class="stat-pod stat-pod-blue">
+                <div class="stat-pod-header">
+                  <span class="stat-mini-icon">🎯</span>
+                  <span class="stat-label">SCOR</span>
+                </div>
+                <div class="stat-big-num" id="final-score">0</div>
+                <span class="stat-subtag">puncte</span>
+              </div>
+
+              <!-- Pod 2: Doneri (Meso Coin, No emoji) -->
+              <div class="stat-pod stat-pod-gold">
+                <div class="stat-pod-header">
+                  <img class="stat-mini-coin" src="doner_clean.png" alt="Döner">
+                  <span class="stat-label">DÖNERI</span>
+                </div>
+                <div class="stat-big-num stat-gold" id="final-doners">0</div>
+                <span class="stat-subtag">colectați</span>
+              </div>
+
+              <!-- Pod 3: Record -->
+              <div class="stat-pod stat-pod-amber">
+                <div class="stat-pod-header">
+                  <span class="stat-mini-icon">👑</span>
+                  <span class="stat-label">RECORD</span>
+                </div>
+                <div class="stat-big-num stat-amber" id="best-score">0</div>
+                <span class="stat-subtag">personal</span>
+              </div>
+            </div>
+
+            <!-- New Record Toast (dynamically visible) -->
+            <div id="new-record-alert" class="new-record-pill hidden">
+              <span>🎉 NOU RECORD PERSONAL! 🔥</span>
+            </div>
+
+            <!-- Last Unlocked Restaurant Location Badge -->
+            <div class="last-location-card" id="last-location-container">
+              <div class="loc-card-badge">
+                <span class="loc-pin">📍</span>
+                <span class="loc-mini-title">DESTINAȚIE ATINSĂ</span>
+              </div>
+              <span class="loc-mini-name" id="gameover-last-loc">Start Călătorie</span>
+            </div>
+
+            <!-- ZONA DE BUTOANE REFACUTA COMPLET (Arcade Style Buttons) -->
+            <div class="gameover-buttons-zone">
+              <button class="btn-game-primary" id="btn-restart">
+                <span class="btn-text">Joaca din Nou</span>
+                <span class="btn-icon-bubble">🔄</span>
+              </button>
+
+              <button class="btn-game-secondary" id="btn-home">
+                <span class="btn-icon">🏠</span>
+                <span class="btn-text">Meniu Principal</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAUSE SCREEN -->
+        <div class="screen-modal hidden" id="screen-pause">
+          <div class="gameover-card">
+            <h2 class="gameover-title" style="font-size: 32px;">PAUZA</h2>
+            <p style="font-size: 14px; color: #cbd5e1; margin-bottom: 24px;">Sarbatoarea Meso 16 Ani este oprita temporar.</p>
+
+            <button class="tap-to-fly-btn" id="btn-resume" style="width: 100%; font-size: 22px; padding: 13px 18px;">
+              <span>Continua Zborul</span>
+              <span>▶</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Controls Panel for Desktop -->
+    <div id="side-controls-panel">
+      <div class="side-controls-header">
+        <span style="font-size: 20px;">🎮</span>
+        <span>MESO CONTROLS</span>
+      </div>
+
+      <div class="control-item-row">
+        <span class="control-label">Bataie din aripi</span>
+        <span class="keycap-badge">SPACE / TAP</span>
+      </div>
+
+      <div class="control-item-row">
+        <span class="control-label">Coborare rapida</span>
+        <span class="keycap-badge">↓ / S / DIVE</span>
+      </div>
+
+      <div class="control-item-row">
+        <span class="control-label">Pauza</span>
+        <span class="keycap-badge">ESC / P</span>
+      </div>
+
+      <div class="control-item-row">
+        <span class="control-label">Muzica & Sunete</span>
+        <span class="keycap-badge">M (MUTE)</span>
+      </div>
+
+      <div class="side-promo-card">
+        <div class="side-promo-title">🎂 MESO 16 ANI</div>
+        <div class="side-promo-desc">De 16 Ani am crescut impreuna! Pe 31 Octombrie sarbatorim in toata tara cu <strong>1+1 GRATUIT</strong> la Doner Kebab Mare!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets.js"></script>
+  <script>
+    if (typeof GAME_ASSETS !== 'undefined' && GAME_ASSETS.doner) {
+      document.querySelectorAll('img[src="doner_clean.png"]').forEach(img => img.src = GAME_ASSETS.doner);
+    }
+  </script>
+  <script src="game.js?v=20.0"></script>
+</body>
+</html>
