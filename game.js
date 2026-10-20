@@ -133,7 +133,11 @@
   class SoundManager {
     constructor() {
       this.ctx = null;
-      this.muted = localStorage.getItem('meso_muted') === 'true';
+      let isMuted = false;
+      try {
+        isMuted = typeof window !== 'undefined' && window.localStorage && window.localStorage.getItem('meso_muted') === 'true';
+      } catch (e) {}
+      this.muted = isMuted;
       this.musicPlaying = false;
       this.nextNoteTime = 0;
       this.currentStep = 0;
@@ -354,33 +358,33 @@
     }
 
     spawnFlapEffects(x, y) {
-      if (this.particles.length > 20) return;
-      for (let i = 0; i < 2; i++) {
+      if (this.particles.length > 22) return;
+      for (let i = 0; i < 3; i++) {
         this.particles.push({
           type: 'dust',
-          x: x - 14 + Math.random() * 6,
-          y: y + 8 + Math.random() * 6,
-          vx: -25 - Math.random() * 25,
-          vy: -8 + Math.random() * 16,
-          radius: 2.5 + Math.random() * 2.5,
-          alpha: 0.5,
-          life: 0.28
+          x: x - 12 + Math.random() * 8,
+          y: y + 10 + Math.random() * 6,
+          vx: -20 - Math.random() * 30,
+          vy: -10 + Math.random() * 20,
+          radius: 3.5 + Math.random() * 3.5,
+          alpha: 0.6,
+          life: 0.35
         });
       }
 
-      if (Math.random() < 0.45) {
+      if (Math.random() < 0.5) {
         this.particles.push({
           type: 'feather',
-          x: x - 18,
-          y: y + 4,
-          vx: -30 - Math.random() * 20,
-          vy: 10 + Math.random() * 18,
+          x: x - 16,
+          y: y + 6,
+          vx: -35 - Math.random() * 20,
+          vy: 15 + Math.random() * 20,
           rot: Math.random() * Math.PI,
-          rotSpeed: 2.5 + Math.random() * 3,
-          w: 6.5,
-          h: 3.5,
-          alpha: 0.75,
-          life: 0.6
+          rotSpeed: 3 + Math.random() * 4,
+          w: 8,
+          h: 4,
+          alpha: 0.85,
+          life: 0.75
         });
       }
     }
@@ -507,36 +511,38 @@
       this.x = 200;
       this.y = 250;
       this.vy = 0;
-      this.gravity = 920;         // Lină, plăcută și predictibilă
-      this.jumpVelocity = -320;   // Salt precis, fluid și confortabil
+      this.gravity = 910;
+      this.jumpVelocity = -325;
       this.diveVelocity = 480;
       this.rotation = 0;
       this.targetRotation = 0;
-      this.radius = 21;           // Rază grafică
-      this.hitboxRadius = 14;     // Hitbox corect, precis și iertător
+      this.radius = 21;
+      this.hitboxRadius = 13.5;
 
       this.scaleX = 1.0;
       this.scaleY = 1.0;
 
-      this.flightTime = 0;
       this.wingAngle = 0;
+      this.wingSpeed = 10;
+      this.flapImpulse = 0;
+      this.flightTime = 0;
+
+      this.blinkTimer = 0;
+      this.isBlinking = false;
     }
 
     flap() {
       this.vy = this.jumpVelocity;
-      // Răspuns instantaneu la atingere: capul se orientează fluid în sus
-      this.rotation = -0.34;
-      this.targetRotation = -0.34;
-      // Animație organică squash & stretch fără deformarea logo-ului MESO
-      this.scaleX = 0.95;
-      this.scaleY = 1.07;
+      this.scaleX = 0.88;
+      this.scaleY = 1.18;
+      this.flapImpulse = 24;
     }
 
     quickDive() {
       this.vy = this.diveVelocity;
+      this.scaleX = 1.18;
+      this.scaleY = 0.86;
       this.targetRotation = 0.85;
-      this.scaleX = 1.07;
-      this.scaleY = 0.93;
     }
 
     reset() {
@@ -547,7 +553,8 @@
       this.targetRotation = 0;
       this.scaleX = 1.0;
       this.scaleY = 1.0;
-      this.wingAngle = 0;
+      this.flapImpulse = 0;
+      this.flightTime = 0;
     }
 
     update(dt) {
@@ -555,42 +562,64 @@
       this.y += this.vy * dt;
       this.flightTime += dt;
 
-      // Orientare aerodinamică continuă și ultra-fluidă
-      if (this.vy < 0) {
-        this.targetRotation = -0.34;
-        this.rotation += (this.targetRotation - this.rotation) * Math.min(1, dt * 14);
+      // Smooth, natural aerodynamic rotation
+      if (this.vy < -60) {
+        this.targetRotation = -0.32;
+      } else if (this.vy < 80) {
+        this.targetRotation = -0.05;
       } else {
-        // În faza de coborâre, înclinare lină înainte
-        const fallFactor = Math.min(1.0, Math.max(0, this.vy - 40) / 400);
-        this.targetRotation = -0.15 + fallFactor * 1.30;
-        this.rotation += (this.targetRotation - this.rotation) * Math.min(1, dt * 9.5);
+        this.targetRotation = Math.min(0.75, (this.vy / 480) * 0.85);
       }
+      this.rotation += (this.targetRotation - this.rotation) * Math.min(1, dt * 10);
 
-      // Revenire elastică, organică a proporțiilor
-      this.scaleX += (1.0 - this.scaleX) * Math.min(1, dt * 12);
-      this.scaleY += (1.0 - this.scaleY) * Math.min(1, dt * 12);
+      // Spring recovery from flap squash-and-stretch
+      this.scaleX += (1.0 - this.scaleX) * Math.min(1, dt * 9);
+      this.scaleY += (1.0 - this.scaleY) * Math.min(1, dt * 9);
+
+      this.flapImpulse = Math.max(0, this.flapImpulse - dt * 38);
+      const totalWingSpeed = this.wingSpeed + this.flapImpulse;
+      this.wingAngle = Math.sin(this.flightTime * totalWingSpeed) * 0.45;
+
+      this.blinkTimer += dt;
+      if (this.blinkTimer > 3.6) {
+        this.isBlinking = true;
+        if (this.blinkTimer > 3.75) {
+          this.isBlinking = false;
+          this.blinkTimer = 0;
+        }
+      }
     }
 
     render(ctx) {
       ctx.save();
       ctx.translate(this.x, this.y);
 
-      // 1. Umbră dinamică discretă proiectată pe șosea când pasărea e aproape de sol
-      if (this.y > GROUND_Y - 140) {
-        const distToGround = GROUND_Y - this.y;
-        const shadowAlpha = Math.max(0, (1 - distToGround / 140) * 0.24);
-        const shadowScale = Math.max(0.45, 1.0 - (distToGround / 140) * 0.45);
-        ctx.save();
-        ctx.translate(0, distToGround + 4);
-        ctx.scale(shadowScale, shadowScale * 0.28);
-        ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
-        ctx.beginPath();
-        ctx.arc(0, 0, 22, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      }
+      // Speed Swoosh Wind Trails behind bird
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.72)';
+      ctx.lineCap = 'round';
 
-      // 2. Rotație și scalare animate
+      const wave = Math.sin(this.flightTime * 16);
+
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(-32 - wave * 2, -8 + wave * 1.5);
+      ctx.lineTo(-15, -8);
+      ctx.stroke();
+
+      ctx.lineWidth = 4.0;
+      ctx.beginPath();
+      ctx.moveTo(-40 + wave * 3, 0);
+      ctx.lineTo(-18, 0);
+      ctx.stroke();
+
+      ctx.lineWidth = 2.8;
+      ctx.beginPath();
+      ctx.moveTo(-30 - wave * 2, 8 - wave * 1.5);
+      ctx.lineTo(-14, 8);
+      ctx.stroke();
+      ctx.restore();
+
       ctx.rotate(this.rotation);
       ctx.scale(this.scaleX, this.scaleY);
 
@@ -598,16 +627,28 @@
         const w = 54;
         const h = 50;
 
-        // Umbră fină ambientală pentru claritate și profunzime premium
+        // Subtle soft shadow underneath
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
-        ctx.shadowBlur = 8;
-        ctx.shadowOffsetY = 2;
-        ctx.drawImage(this.image, -w / 2, -h / 2, w, h);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+        ctx.beginPath();
+        ctx.ellipse(0, 18, 16, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.restore();
 
+        // High-res Meso mascot (clean, no artificial brown overlay!)
+        ctx.drawImage(this.image, -w / 2, -h / 2, w, h);
+
+        if (this.isBlinking) {
+          ctx.save();
+          ctx.strokeStyle = '#1b120c';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(8, -5, 4, 0.2, Math.PI - 0.2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
       } else {
-        // Fallback vectorial de înaltă rezoluție
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#1b263b';
         ctx.lineWidth = 2.5;
@@ -645,7 +686,7 @@
       this.gapY = gapY;
       this.gapSize = gapSize;
       this.width = 66;
-      this.collarW = 76;   // Overhangs 5px on each side
+      this.collarW = 78;   // Overhangs 6px on each side
       this.collarH = 26;   // Classic Flappy pipe collar lip height
       this.cleared = false;
     }
@@ -669,25 +710,12 @@
       const shaftH = Math.max(0, bottomY - this.collarH);
       const collarY = shaftH;
 
-      // 1. Shaft (Clean Vertical Cylinder with 3D Specular Highlight)
+      // 1. Shaft (Ultra-smooth 3D Cylinder with rich Meso emerald gradient)
       this.draw3DCylinder(ctx, x, 0, this.width, shaftH);
 
-      // 2. 3D Overhang Cast Shadow above collar onto shaft
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.36)';
-      ctx.fillRect(x, collarY - 6, this.width, 6);
-
-      // 3. Collar Lip (Rounded 3D Head at opening)
+      // 2. Collar Lip (Flanged 3D Head at opening - clean, without ugly black cavity)
       const cx = x - (this.collarW - this.width) / 2;
       this.draw3DCollar(ctx, cx, collarY, this.collarW, this.collarH, true);
-
-      // 4. 3D Hollow Opening Rim at bottom of top pipe
-      ctx.fillStyle = '#0a1e0b';
-      ctx.beginPath();
-      ctx.ellipse(x + this.width / 2, bottomY, this.collarW / 2 - 4, 5.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#061307';
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
 
       ctx.restore();
     }
@@ -701,25 +729,12 @@
       const shaftY = topY + this.collarH;
       const shaftH = Math.max(0, GROUND_Y - shaftY);
 
-      // 1. Shaft (Clean Vertical Cylinder)
+      // 1. Shaft (Ultra-smooth 3D Cylinder)
       this.draw3DCylinder(ctx, x, shaftY, this.width, shaftH);
 
-      // 2. 3D Overhang Cast Shadow from collar onto shaft below
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.40)';
-      ctx.fillRect(x, shaftY, this.width, 8);
-
-      // 3. Collar Lip (Rounded 3D Head at top of pipe)
+      // 2. Collar Lip (Flanged 3D Head at opening - clean, without ugly black cavity)
       const cx = x - (this.collarW - this.width) / 2;
       this.draw3DCollar(ctx, cx, collarY, this.collarW, this.collarH, false);
-
-      // 4. 3D Hollow Opening Rim at top of bottom pipe
-      ctx.fillStyle = '#0a1e0b';
-      ctx.beginPath();
-      ctx.ellipse(x + this.width / 2, topY, this.collarW / 2 - 4, 5.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#061307';
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
 
       ctx.restore();
     }
@@ -729,27 +744,32 @@
       ctx.save();
       ctx.translate(x, y);
 
-      // Classic Flappy Base Green
-      ctx.fillStyle = '#48b824';
+      // Rich 3D Volumetric Meso Emerald Gradient (Single fast GPU draw call!)
+      const grad = ctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0.0, '#155d27');  // Left ambient curvature
+      grad.addColorStop(0.12, '#22c55e'); // Curvature illumination
+      grad.addColorStop(0.24, '#4ade80'); // Specular highlight streak
+      grad.addColorStop(0.36, '#86efac'); // Intense glossy glint
+      grad.addColorStop(0.48, '#22c55e'); // Body emerald tone
+      grad.addColorStop(0.78, '#16a34a'); // Diffuse shading
+      grad.addColorStop(0.92, '#15803d'); // Right curvature shadow
+      grad.addColorStop(1.0, '#0d401a');  // Deep ambient edge
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
 
-      // 3D Left specular highlight streak
-      ctx.fillStyle = '#8eee38';
-      ctx.fillRect(4, 0, 14, h);
+      // Subtle Vertical Segment Seams (Architectural arcade modular pipe joints)
+      if (h > 90) {
+        for (let sy = 75; sy < h - 20; sy += 75) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+          ctx.fillRect(0, sy, w, 2.5);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.fillRect(0, sy + 2.5, w, 1);
+        }
+      }
 
-      // Specular bright center beam
-      ctx.fillStyle = '#bdf768';
-      ctx.fillRect(8, 0, 5, h);
-
-      // 3D Right cylinder curvature shadow
-      ctx.fillStyle = '#267014';
-      ctx.fillRect(w - 20, 0, 20, h);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
-      ctx.fillRect(w - 9, 0, 9, h);
-
-      // Clean arcade outer border
-      ctx.strokeStyle = '#11350a';
-      ctx.lineWidth = 2.5;
+      // Clean arcade dark outline
+      ctx.strokeStyle = '#0a2e12';
+      ctx.lineWidth = 2.4;
       ctx.strokeRect(0, 0, w, h);
 
       ctx.restore();
@@ -759,44 +779,48 @@
       ctx.save();
       ctx.translate(x, y);
 
-      const rad = 6.5;
+      const rad = 7.5;
       const radii = isTopPipe ? [3, 3, rad, rad] : [rad, rad, 3, 3];
 
-      // Collar Base Green
-      ctx.fillStyle = '#56c22c';
+      // Drop shadow from collar overhang onto shaft
+      if (isTopPipe) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(5, -6, w - 10, 6);
+      } else {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(5, h, w - 10, 8);
+      }
+
+      // Rich 3D Volumetric Collar Gradient (Matches cylinder with extra brilliance)
+      const grad = ctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0.0, '#166534');
+      grad.addColorStop(0.12, '#22c55e');
+      grad.addColorStop(0.22, '#4ade80');
+      grad.addColorStop(0.34, '#bbf7d0'); // High-gloss specular highlight
+      grad.addColorStop(0.46, '#22c55e');
+      grad.addColorStop(0.78, '#15803d');
+      grad.addColorStop(0.92, '#166534');
+      grad.addColorStop(1.0, '#0a2e12');
+
+      ctx.fillStyle = grad;
       drawRoundRect(ctx, 0, 0, w, h, radii);
       ctx.fill();
 
-      // 3D Lighting clipped to rounded collar
-      ctx.save();
-      drawRoundRect(ctx, 0, 0, w, h, radii);
-      ctx.clip();
+      // Golden Anniversary Trim Rim on Collar Lip ("Meso 16" luxury detail!)
+      const goldY = isTopPipe ? 3 : h - 6;
+      ctx.fillStyle = '#ffd60a';
+      ctx.fillRect(3, goldY, w - 6, 2.5);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.fillRect(8, goldY, 20, 1.2);
 
-      // 3D Left specular highlight streak
-      ctx.fillStyle = '#9cf554';
-      ctx.fillRect(5, 0, 16, h);
-      ctx.fillStyle = '#c8ff8e';
-      ctx.fillRect(9, 0, 6, h);
+      // Outer Beveled Highlight on mouth edge
+      const edgeY = isTopPipe ? h - 2 : 1;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fillRect(2, edgeY, w - 4, 1.5);
 
-      // 3D Right shadow
-      ctx.fillStyle = '#267014';
-      ctx.fillRect(w - 22, 0, 22, h);
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-      ctx.fillRect(w - 10, 0, 10, h);
-
-      // Top bevel highlight
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      ctx.fillRect(0, 0, w, 2.5);
-
-      // Bottom bevel shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-      ctx.fillRect(0, h - 3, w, 3);
-
-      ctx.restore(); // restore clip
-
-      // Clean arcade outer border
-      ctx.strokeStyle = '#11350a';
-      ctx.lineWidth = 2.5;
+      // Clean arcade dark outline
+      ctx.strokeStyle = '#0a2e12';
+      ctx.lineWidth = 2.4;
       drawRoundRect(ctx, 0, 0, w, h, radii);
       ctx.stroke();
 
@@ -806,13 +830,9 @@
     checkCollision(bird) {
       const topBottom = this.gapY - this.gapSize / 2;
       const bottomTop = this.gapY + this.gapSize / 2;
-      const r = bird.hitboxRadius || 14;
+      const r = bird.hitboxRadius || 13.5;
 
-      // Margine de toleranță corectă pentru buza tubului (collar overhang)
-      const left = this.x - 5;
-      const right = this.x + this.width + 5;
-
-      if (bird.x + r > left + 2.5 && bird.x - r < right - 2.5) {
+      if (bird.x + r > this.x - 4 && bird.x - r < this.x + this.width + 4) {
         if (bird.y - r < topBottom || bird.y + r > bottomTop) {
           return true;
         }
@@ -834,9 +854,11 @@
       this.locIdx = locIdx;
       this.locName = RESTAURANT_LOCATIONS[locIdx % RESTAURANT_LOCATIONS.length] || "Mesopotamia";
       this.displayName = this.locName.replace(/^Mesopotamia\s*/i, '').trim();
-      this.width = 184;
-      this.height = 50;
-      this.y = GROUND_Y - 58; // Exactly above the curb as drawn by user
+      this.width = 216;
+      this.height = 72;
+      this.y = GROUND_Y - 98; // Taller posts, elevated grand highway sign
+      const len = this.displayName.length;
+      this.fontSize = len > 24 ? 12 : (len > 18 ? 13.5 : 15.5);
     }
 
     update(dt, speed) {
@@ -846,90 +868,178 @@
     render(ctx) {
       ctx.save();
 
-      // 1. Double Galvanized Steel Support Posts anchored into the road curb
-      const postW = 5;
-      const post1X = this.x + 24;
-      const post2X = this.x + this.width - 24;
-      const postTop = this.y + 16;
+      const postW = 7;
+      const post1X = this.x + 28;
+      const post2X = this.x + this.width - 28 - postW;
+      const postTop = this.y + 24;
       const postBottom = GROUND_Y + 12;
 
+      // 1. Double Steel Heavy-Duty Structural Columns
       [post1X, post2X].forEach(px => {
-        // Cast shadow behind post
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.40)';
-        ctx.fillRect(px + 2, postTop, postW + 1, postBottom - postTop);
+        // Deep shadow behind column
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(px + 3, postTop, postW + 1, postBottom - postTop);
 
-        // Metallic galvanized steel post
+        // Metallic Column with 3D bevel gradient
         const postGrad = ctx.createLinearGradient(px, 0, px + postW, 0);
-        postGrad.addColorStop(0, '#94a3b8');
-        postGrad.addColorStop(0.35, '#f8fafc');
-        postGrad.addColorStop(1, '#475569');
+        postGrad.addColorStop(0, '#64748b');
+        postGrad.addColorStop(0.3, '#f1f5f9');
+        postGrad.addColorStop(0.7, '#94a3b8');
+        postGrad.addColorStop(1, '#334155');
         ctx.fillStyle = postGrad;
         ctx.fillRect(px, postTop, postW, postBottom - postTop);
 
-        // Mounting clamp bolts on post
+        // Heavy-duty mounting clamp brackets
         ctx.fillStyle = '#1e293b';
-        ctx.fillRect(px - 1, this.y + 18, postW + 2, 3);
-        ctx.fillRect(px - 1, this.y + 36, postW + 2, 3);
+        ctx.fillRect(px - 2, this.y + 28, postW + 4, 4);
+        ctx.fillRect(px - 2, this.y + 54, postW + 4, 4);
+        ctx.fillStyle = '#ffd60a';
+        ctx.fillRect(px, this.y + 29, 2, 2);
+        ctx.fillRect(px, this.y + 55, 2, 2);
 
-        // Base flange anchored into the road curb
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(px - 3, GROUND_Y - 1, postW + 6, 3);
+        // Base structural anchoring flange on road curb
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(px - 4, GROUND_Y - 2, postW + 8, 4);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(px - 2, GROUND_Y - 3, 2, 2);
+        ctx.fillRect(px + postW, GROUND_Y - 3, 2, 2);
       });
 
-      // 2. 3D Cast Shadow from signboard onto road & curb
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
-      drawRoundRect(ctx, this.x + 4, this.y + 5, this.width, this.height, 8);
-      ctx.fill();
-
-      // 3. Road Signboard Body (European Highway Town Entrance Placard)
-      const plateGrad = ctx.createLinearGradient(0, this.y, 0, this.y + this.height);
-      plateGrad.addColorStop(0, '#15572e');
-      plateGrad.addColorStop(0.5, '#0e3d20');
-      plateGrad.addColorStop(1, '#082914');
-      ctx.fillStyle = plateGrad;
-      drawRoundRect(ctx, this.x, this.y, this.width, this.height, 8);
-      ctx.fill();
-
-      // Reflective Highway Gold Border
-      ctx.strokeStyle = '#ffd60a';
-      ctx.lineWidth = 2.5;
-      drawRoundRect(ctx, this.x, this.y, this.width, this.height, 8);
-      ctx.stroke();
-
-      // Inner Reflective White Pin-stripe
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-      ctx.lineWidth = 1.0;
-      drawRoundRect(ctx, this.x + 3.5, this.y + 3.5, this.width - 7, this.height - 7, 5.5);
-      ctx.stroke();
-
-      // 4. Header: "📍 BINE AȚI VENIT • #... MESO"
-      ctx.fillStyle = '#ffc300';
-      ctx.font = 'bold 8.5px "Outfit", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`📍 BINE AȚI VENIT • #${this.locIdx + 1} MESO`, this.x + this.width / 2, this.y + 15);
-
-      // 5. Restaurant Location Name ("scrie pe placuta locatia")
-      ctx.fillStyle = '#ffffff';
-      let fontSize = 12.5;
-      ctx.font = `bold ${fontSize}px "Lilita One", "Titan One", "Outfit", sans-serif`;
-      const maxW = this.width - 18;
-      let text = this.displayName;
-      while (fontSize > 8.5 && ctx.measureText(text).width > maxW) {
-        fontSize -= 0.5;
-        ctx.font = `bold ${fontSize}px "Lilita One", "Titan One", "Outfit", sans-serif`;
+      // Horizontal cross-strut truss between posts
+      const strutY = this.y + this.height + 10;
+      if (strutY < GROUND_Y - 4) {
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(post1X + postW, strutY, post2X - (post1X + postW), 3);
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(post1X + postW, strutY, post2X - (post1X + postW), 1);
       }
-      ctx.fillText(text, this.x + this.width / 2, this.y + 34);
 
-      // 6. Corner Reflective Rivets
+      // 2. 3D Cast Shadow from signboard onto road & background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.40)';
+      drawRoundRect(ctx, this.x + 5, this.y + 6, this.width, this.height, 10);
+      ctx.fill();
+
+      // 3. Overhead Gooseneck Solar Lamps (2 modern LED highway floodlights)
+      const lamp1X = this.x + 52;
+      const lamp2X = this.x + this.width - 52;
+      [lamp1X, lamp2X].forEach(lx => {
+        // Gooseneck arch
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(lx, this.y + 4);
+        ctx.quadraticCurveTo(lx, this.y - 14, lx + 6, this.y - 12);
+        ctx.stroke();
+
+        // Lamp fixture housing
+        ctx.fillStyle = '#ffd60a';
+        drawRoundRect(ctx, lx + 2, this.y - 15, 12, 5, 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(lx + 4, this.y - 11, 8, 1.5);
+
+        // Soft spotlight illumination cone cast on the sign
+        const spotGrad = ctx.createRadialGradient(lx + 8, this.y - 10, 2, lx + 8, this.y + 20, 38);
+        spotGrad.addColorStop(0, 'rgba(255, 240, 160, 0.35)');
+        spotGrad.addColorStop(0.5, 'rgba(255, 220, 100, 0.12)');
+        spotGrad.addColorStop(1, 'rgba(255, 220, 100, 0)');
+        ctx.fillStyle = spotGrad;
+        ctx.beginPath();
+        ctx.moveTo(lx + 4, this.y - 10);
+        ctx.lineTo(lx - 22, this.y + 45);
+        ctx.lineTo(lx + 38, this.y + 45);
+        ctx.closePath();
+        ctx.fill();
+      });
+
+      // 4. Signboard Plate Body (High-Gloss European Highway Placard)
+      const plateGrad = ctx.createLinearGradient(0, this.y, 0, this.y + this.height);
+      plateGrad.addColorStop(0, '#1c6d3b');
+      plateGrad.addColorStop(0.3, '#14562d');
+      plateGrad.addColorStop(0.7, '#0d3d1f');
+      plateGrad.addColorStop(1, '#062010');
+      ctx.fillStyle = plateGrad;
+      drawRoundRect(ctx, this.x, this.y, this.width, this.height, 10);
+      ctx.fill();
+
+      // Specular Glass Reflection Sheen across top half
+      const sheenGrad = ctx.createLinearGradient(this.x, this.y, this.x + this.width, this.y + 36);
+      sheenGrad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+      sheenGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.08)');
+      sheenGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = sheenGrad;
+      drawRoundRect(ctx, this.x + 2, this.y + 2, this.width - 4, 32, 8);
+      ctx.fill();
+
+      // Outer Heavy Gold Highway Border
+      ctx.strokeStyle = '#ffd60a';
+      ctx.lineWidth = 3.0;
+      drawRoundRect(ctx, this.x, this.y, this.width, this.height, 10);
+      ctx.stroke();
+
+      // Inner High-Visibility Reflective White Pinstripe
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+      ctx.lineWidth = 1.2;
+      drawRoundRect(ctx, this.x + 4.5, this.y + 4.5, this.width - 9, this.height - 9, 7);
+      ctx.stroke();
+
+      // 5. Header Pill Badge ("📍 BINE AȚI VENIT • #... MESO")
+      const pillW = 168;
+      const pillH = 16;
+      const pillX = this.x + (this.width - pillW) / 2;
+      const pillY = this.y + 8;
+      ctx.fillStyle = 'rgba(5, 25, 12, 0.75)';
+      drawRoundRect(ctx, pillX, pillY, pillW, pillH, 8);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 214, 10, 0.7)';
+      ctx.lineWidth = 1.0;
+      drawRoundRect(ctx, pillX, pillY, pillW, pillH, 8);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffc300';
+      ctx.font = '900 9px "Outfit", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`📍 BINE AȚI VENIT • #${this.locIdx + 1} MESO`, this.x + this.width / 2, pillY + 11.5);
+
+      // 6. Main Restaurant / Mall Name (Embroidery 3D text with rich readability)
+      const nameY = this.y + 43;
+      // Drop Shadow for 3D depth
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.font = `900 ${this.fontSize}px "Lilita One", "Titan One", "Outfit", sans-serif`;
+      ctx.fillText(this.displayName, this.x + this.width / 2, nameY + 2);
+
+      // Crisp White Foreground
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(this.displayName, this.x + this.width / 2, nameY);
+
+      // 7. Footer Tagline ("✨ DE 16 ANI • GUSTUL TĂU FAVORIT ✨")
+      ctx.fillStyle = 'rgba(255, 214, 10, 0.4)';
+      ctx.fillRect(this.x + 22, this.y + 53, this.width - 44, 1);
+
+      ctx.fillStyle = '#ffd60a';
+      ctx.font = '800 8px "Outfit", sans-serif';
+      ctx.fillText('DE 16 ANI • GUSTUL TĂU FAVORIT', this.x + this.width / 2, this.y + 63);
+
+      // 8. Corner Chrome Rivets
       [
-        [this.x + 6, this.y + 6],
-        [this.x + this.width - 6, this.y + 6],
-        [this.x + 6, this.y + this.height - 6],
-        [this.x + this.width - 6, this.y + this.height - 6]
+        [this.x + 8, this.y + 8],
+        [this.x + this.width - 8, this.y + 8],
+        [this.x + 8, this.y + this.height - 8],
+        [this.x + this.width - 8, this.y + this.height - 8]
       ].forEach(([rx, ry]) => {
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(rx + 0.5, ry + 0.5, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
         ctx.fillStyle = '#f8fafc';
         ctx.beginPath();
-        ctx.arc(rx, ry, 1.4, 0, Math.PI * 2);
+        ctx.arc(rx, ry, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(rx - 0.5, ry - 0.5, 0.8, 0, Math.PI * 2);
         ctx.fill();
       });
 
@@ -990,10 +1100,10 @@
         ctx.drawImage(this.image, -w / 2, -h / 2, w, h);
       } else {
         ctx.fillStyle = '#6e3e08';
-        ctx.font = 'bold 11px sans-serif';
+        ctx.font = '10px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('M', 0, 0);
+        ctx.fillText('🥙', 0, 0);
       }
 
       // Micro star glint
@@ -1037,18 +1147,13 @@
       // 3D Parallax Skyline Layers & Moving Road
       this.farSkylineX = 0;
       this.nearSkylineX = 0;
+      this.beaconTimer = 0;
       this.groundOffset = 0;
       this.lightsWave = 0;
       this.sunRotation = 0;
 
       // Time of Day: 0.0 = Day (Zi), 0.33 = Sunset (Apus), 0.65 = Festive Night (Noapte), 0.88 = Dawn (Răsărit)
       this.timeOfDay = 0.0;
-
-      // Caching offscreen pentru performanță extremă (zero lag, 120 FPS constant)
-      this.farWrap = 520;
-      this.nearWrap = 560;
-      this.lastSkylineUpdate = -999;
-      this.initSkylineCanvases();
 
       // Daytime Drifting Fluffy Cumulus Clouds
       this.clouds = [
@@ -1104,18 +1209,6 @@
       // Pre-render static base assets for 60 FPS mobile performance
       this.initGroundCanvas();
       this.initBulbGlowCanvas();
-    }
-
-    initSkylineCanvases() {
-      this.farCanvas = document.createElement('canvas');
-      this.farCanvas.width = this.farWrap;
-      this.farCanvas.height = GROUND_Y;
-      this.farCtx = this.farCanvas.getContext('2d');
-
-      this.nearCanvas = document.createElement('canvas');
-      this.nearCanvas.width = this.nearWrap;
-      this.nearCanvas.height = GROUND_Y;
-      this.nearCtx = this.nearCanvas.getContext('2d');
     }
 
     initGroundCanvas() {
@@ -1176,21 +1269,19 @@
 
       this.sunRotation += dt * 0.35;
 
-      // 3D Parallax Skyline Speeds: Far (0.08x) and Near (0.22x)
-      this.farSkylineX -= speed * 0.08 * dt;
-      if (this.farSkylineX < -this.farWrap) this.farSkylineX += this.farWrap;
+      // 3D Parallax Skyline Speeds: Far (0.07x) and Near (0.20x)
+      // Exact synchronization with wrap widths (far: 500, near: 580) eliminates all visual lag & pops!
+      this.farSkylineX -= speed * 0.07 * dt;
+      if (this.farSkylineX <= -500) this.farSkylineX += 500;
 
-      this.nearSkylineX -= speed * 0.22 * dt;
-      if (this.nearSkylineX < -this.nearWrap) this.nearSkylineX += this.nearWrap;
+      this.nearSkylineX -= speed * 0.20 * dt;
+      if (this.nearSkylineX <= -580) this.nearSkylineX += 580;
 
       // "drumul de jos in miscare" - Road offset scrolling at 100% true flight speed!
       this.groundOffset = (this.groundOffset + speed * dt) % 64;
-      this.lightsWave += dt * 2.2;
+      this.beaconTimer += dt;
 
-      // Reconstrucție inteligentă a cache-ului de skyline doar când lumina zilei se schimbă
-      if (Math.abs(this.timeOfDay - this.lastSkylineUpdate) > 0.012) {
-        this.buildSkylineCaches(this.getCycleState());
-      }
+      this.lightsWave += dt * 2.2;
 
       // Clouds Drifting
       this.clouds.forEach(c => {
@@ -1231,22 +1322,18 @@
     }
 
     getCycleState() {
-      // 4 Keyframes:
-      // 0.00: Full DAY (Zi senin, soare, nori albi)
-      // 0.33: SUNSET (Apus auriu-roz, soarele apune)
-      // 0.65: FESTIVE NIGHT (Noapte înstelată, lună, lumini strălucitoare - Meso 16!)
-      // 0.88: DAWN / SUNRISE (Răsărit pastelat, soarele răsare)
       const t = this.timeOfDay;
 
+      // 4 Keyframes for Sky Color & Atmosphere:
+      // 0.00 - 0.28: DAY (Senin, cer azur strălucitor)
+      // 0.28 - 0.48: SUNSET (Apus auriu-roz, soarele apune)
+      // 0.48 - 0.80: NIGHT (Noapte înstelată, lună celestă strălucitoare)
+      // 0.80 - 1.00: DAWN (Răsărit pastelat, soarele revine)
+
       const KF_DAY = {
-        skyTop: [56, 189, 248],
-        skyMid: [186, 230, 253],
-        skyBottom: [254, 240, 138],
-        sunAlpha: 1.0,
-        sunY: 95,
-        moonAlpha: 0.0,
-        moonY: 220,
-        starsAlpha: 0.0,
+        skyTop: [28, 142, 244],
+        skyMid: [136, 216, 255],
+        skyBottom: [255, 244, 192],
         cloudsAlpha: 0.95,
         lightsGlowAlpha: 0.08,
         windowGlowAlpha: 0.15,
@@ -1254,78 +1341,112 @@
       };
 
       const KF_SUNSET = {
-        skyTop: [76, 29, 149],
-        skyMid: [217, 70, 239],
-        skyBottom: [249, 115, 22],
-        sunAlpha: 0.85,
-        sunY: 240,
-        moonAlpha: 0.35,
-        moonY: 140,
-        starsAlpha: 0.25,
+        skyTop: [58, 20, 112],
+        skyMid: [222, 48, 124],
+        skyBottom: [255, 148, 46],
         cloudsAlpha: 0.55,
-        lightsGlowAlpha: 0.55,
-        windowGlowAlpha: 0.70,
-        buildingColor: [42, 33, 56]
+        lightsGlowAlpha: 0.65,
+        windowGlowAlpha: 0.72,
+        buildingColor: [44, 32, 58]
       };
 
       const KF_NIGHT = {
-        skyTop: [11, 16, 30],
-        skyMid: [26, 31, 56],
-        skyBottom: [88, 28, 135],
-        sunAlpha: 0.0,
-        sunY: 300,
-        moonAlpha: 1.0,
-        moonY: 90,
-        starsAlpha: 1.0,
-        cloudsAlpha: 0.15,
+        skyTop: [6, 9, 24],
+        skyMid: [15, 23, 52],
+        skyBottom: [46, 20, 80],
+        cloudsAlpha: 0.18,
         lightsGlowAlpha: 1.0,
         windowGlowAlpha: 1.0,
-        buildingColor: [20, 22, 36]
+        buildingColor: [18, 20, 32]
       };
 
       const KF_DAWN = {
-        skyTop: [30, 41, 59],
-        skyMid: [129, 140, 248],
-        skyBottom: [253, 224, 71],
-        sunAlpha: 0.5,
-        sunY: 175,
-        moonAlpha: 0.25,
-        moonY: 160,
-        starsAlpha: 0.15,
-        cloudsAlpha: 0.65,
-        lightsGlowAlpha: 0.35,
-        windowGlowAlpha: 0.35,
-        buildingColor: [46, 54, 72]
+        skyTop: [26, 36, 68],
+        skyMid: [118, 132, 240],
+        skyBottom: [255, 218, 138],
+        cloudsAlpha: 0.68,
+        lightsGlowAlpha: 0.32,
+        windowGlowAlpha: 0.32,
+        buildingColor: [46, 54, 74]
       };
 
       let kf1, kf2, localT;
-      if (t < 0.33) {
+      if (t < 0.28) {
+        kf1 = KF_DAY;
+        kf2 = KF_DAY;
+        localT = 0;
+      } else if (t < 0.48) {
         kf1 = KF_DAY;
         kf2 = KF_SUNSET;
-        localT = t / 0.33;
-      } else if (t < 0.65) {
+        localT = (t - 0.28) / (0.48 - 0.28);
+      } else if (t < 0.80) {
         kf1 = KF_SUNSET;
         kf2 = KF_NIGHT;
-        localT = (t - 0.33) / (0.65 - 0.33);
-      } else if (t < 0.88) {
-        kf1 = KF_NIGHT;
-        kf2 = KF_DAWN;
-        localT = (t - 0.65) / (0.88 - 0.65);
+        localT = (t - 0.48) / (0.80 - 0.48);
       } else {
         kf1 = KF_DAWN;
         kf2 = KF_DAY;
-        localT = (t - 0.88) / (1.0 - 0.88);
+        localT = (t - 0.80) / (1.0 - 0.80);
+      }
+
+      // "cand se face noapte sa dispara soarele si sa fie luna pe cer"
+      // STRICT HANDOVER: Soarele și Luna nu apar NICIODATĂ simultan pe cer!
+      let sunAlpha = 0;
+      let sunY = 600;
+      let moonAlpha = 0;
+      let moonY = 600;
+      let starsAlpha = 0;
+
+      if (t < 0.28) {
+        // Pure Day: Sun high, Moon completely gone
+        sunAlpha = 1.0;
+        sunY = 92;
+        moonAlpha = 0.0;
+        starsAlpha = 0.0;
+      } else if (t < 0.48) {
+        // Sunset: Sun sinks smoothly behind city skyline and fades out to 0
+        const p = (t - 0.28) / (0.48 - 0.28);
+        sunAlpha = Math.max(0, 1.0 - p * 1.0);
+        sunY = 92 + p * 380; // Sinks from 92 to 472 (behind skyline)
+        moonAlpha = 0.0;    // NO moon yet until sun is completely gone!
+        starsAlpha = p * 0.3;
+      } else if (t < 0.78) {
+        // Night: Sun is 100% GONE. Moon rises high in the sky and shines bright!
+        sunAlpha = 0.0;
+        sunY = 600;
+        const p = (t - 0.48) / (0.78 - 0.48);
+        // Moon rises quickly in first 20% of night and stays bright
+        moonAlpha = Math.min(1.0, p * 4.0);
+        moonY = 82;
+        starsAlpha = 1.0;
+      } else {
+        // Dawn: Moon fades out and sinks, then Sun emerges fresh from horizon
+        const p = (t - 0.78) / (1.0 - 0.78);
+        if (p < 0.45) {
+          // Moon setting and fading out
+          moonAlpha = Math.max(0, 1.0 - p * 2.2);
+          moonY = 82 + p * 160;
+          sunAlpha = 0.0;
+          starsAlpha = Math.max(0, 1.0 - p * 2.0);
+        } else {
+          // Sun rising from horizon into day
+          moonAlpha = 0.0;
+          starsAlpha = 0.0;
+          const sp = (p - 0.45) / 0.55;
+          sunAlpha = Math.min(1.0, sp * 1.2);
+          sunY = 380 - sp * 288; // Rises from 380 to 92
+        }
       }
 
       return {
         skyTop: lerpRGB(kf1.skyTop, kf2.skyTop, localT),
         skyMid: lerpRGB(kf1.skyMid, kf2.skyMid, localT),
         skyBottom: lerpRGB(kf1.skyBottom, kf2.skyBottom, localT),
-        sunAlpha: lerpVal(kf1.sunAlpha, kf2.sunAlpha, localT),
-        sunY: lerpVal(kf1.sunY, kf2.sunY, localT),
-        moonAlpha: lerpVal(kf1.moonAlpha, kf2.moonAlpha, localT),
-        moonY: lerpVal(kf1.moonY, kf2.moonY, localT),
-        starsAlpha: lerpVal(kf1.starsAlpha, kf2.starsAlpha, localT),
+        sunAlpha,
+        sunY,
+        moonAlpha,
+        moonY,
+        starsAlpha,
         cloudsAlpha: lerpVal(kf1.cloudsAlpha, kf2.cloudsAlpha, localT),
         lightsGlowAlpha: lerpVal(kf1.lightsGlowAlpha, kf2.lightsGlowAlpha, localT),
         windowGlowAlpha: lerpVal(kf1.windowGlowAlpha, kf2.windowGlowAlpha, localT),
@@ -1335,6 +1456,8 @@
 
     render(ctx) {
       const state = this.getCycleState();
+      const isSunset = state.lightsGlowAlpha > 0.25;
+      const isNight = state.windowGlowAlpha > 0.40;
 
       // 1. Dynamic Smooth Sky Gradient (Day -> Sunset -> Night -> Dawn)
       // Stretches seamlessly all the way to GROUND_Y (575px), eliminating the white background band!
@@ -1345,111 +1468,244 @@
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, V_WIDTH, GROUND_Y + 12);
 
-      // 2. Daytime Radiant Sun
+      // 2. Daytime Radiant Sun ("cerul mai frumos soarele si luna")
       if (state.sunAlpha > 0.01) {
         const sx = 295;
         const sy = state.sunY;
         ctx.save();
         ctx.globalAlpha = state.sunAlpha;
 
-        // Outer Corona Flare
-        const corona = ctx.createRadialGradient(sx, sy, 8, sx, sy, 72);
-        corona.addColorStop(0, 'rgba(255, 245, 175, 0.65)');
-        corona.addColorStop(0.4, 'rgba(255, 200, 30, 0.28)');
-        corona.addColorStop(1, 'rgba(255, 180, 0, 0)');
-        ctx.fillStyle = corona;
+        // Volumetric Sunbeams / Soft God-Rays across the upper sky
+        if (state.sunAlpha > 0.25) {
+          ctx.save();
+          ctx.globalAlpha = state.sunAlpha * 0.14;
+          const beamGrad = ctx.createLinearGradient(sx, sy, sx - 220, sy + 320);
+          beamGrad.addColorStop(0, 'rgba(255, 248, 200, 0.75)');
+          beamGrad.addColorStop(0.5, 'rgba(255, 230, 150, 0.25)');
+          beamGrad.addColorStop(1, 'rgba(255, 230, 150, 0)');
+          ctx.fillStyle = beamGrad;
+
+          [
+            [-0.32, 0.16, 380],
+            [-0.62, 0.20, 430],
+            [-0.92, 0.18, 360]
+          ].forEach(([angle, width, length]) => {
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + Math.cos(angle - width) * length, sy + Math.sin(angle - width) * length);
+            ctx.lineTo(sx + Math.cos(angle + width) * length, sy + Math.sin(angle + width) * length);
+            ctx.closePath();
+            ctx.fill();
+          });
+          ctx.restore();
+        }
+
+        // A. Huge Warm Atmospheric Bloom
+        const bloom = ctx.createRadialGradient(sx, sy, 6, sx, sy, 96);
+        bloom.addColorStop(0, 'rgba(255, 252, 210, 0.90)');
+        bloom.addColorStop(0.25, 'rgba(255, 218, 70, 0.42)');
+        bloom.addColorStop(0.65, 'rgba(255, 180, 20, 0.14)');
+        bloom.addColorStop(1, 'rgba(255, 170, 0, 0)');
+        ctx.fillStyle = bloom;
         ctx.beginPath();
-        ctx.arc(sx, sy, 72, 0, Math.PI * 2);
+        ctx.arc(sx, sy, 96, 0, Math.PI * 2);
         ctx.fill();
 
-        // Rotating Sun Rays
+        // B. Secondary Solar Halo Ring
+        ctx.strokeStyle = 'rgba(255, 238, 140, 0.32)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 35, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // C. 12 Diamond Tapered Sunburst Rays (Alternating long & medium 3D rays)
         ctx.save();
         ctx.translate(sx, sy);
         ctx.rotate(this.sunRotation);
-        ctx.strokeStyle = 'rgba(255, 230, 110, 0.38)';
-        ctx.lineWidth = 2.2;
-        for (let i = 0; i < 8; i++) {
-          const a = (i / 8) * Math.PI * 2;
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2;
+          const isLong = i % 2 === 0;
+          const rayLen = isLong ? 45 : 33;
+          const rayW = isLong ? 5.8 : 4.0;
+          const innerR = 21;
+
+          ctx.save();
+          ctx.rotate(a);
+          const rayGrad = ctx.createLinearGradient(innerR, 0, rayLen, 0);
+          rayGrad.addColorStop(0, isLong ? 'rgba(255, 245, 150, 0.88)' : 'rgba(255, 220, 70, 0.75)');
+          rayGrad.addColorStop(0.6, isLong ? 'rgba(255, 205, 40, 0.45)' : 'rgba(255, 185, 20, 0.35)');
+          rayGrad.addColorStop(1, 'rgba(255, 180, 20, 0)');
+          ctx.fillStyle = rayGrad;
+
           ctx.beginPath();
-          ctx.moveTo(Math.cos(a) * 22, Math.sin(a) * 22);
-          ctx.lineTo(Math.cos(a) * 35, Math.sin(a) * 35);
-          ctx.stroke();
+          ctx.moveTo(innerR, 0);
+          ctx.lineTo(innerR + (rayLen - innerR) * 0.45, -rayW / 2);
+          ctx.lineTo(rayLen, 0);
+          ctx.lineTo(innerR + (rayLen - innerR) * 0.45, rayW / 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
         }
         ctx.restore();
 
-        // Sun Disc
-        const sunDisc = ctx.createRadialGradient(sx - 3, sy - 3, 2, sx, sy, 20);
+        // D. Brilliant Glowing Sun Core (Multi-stop radiant incandescent disc)
+        const sunDisc = ctx.createRadialGradient(sx - 4, sy - 4, 2, sx, sy, 22);
         sunDisc.addColorStop(0, '#ffffff');
-        sunDisc.addColorStop(0.5, '#fff07a');
-        sunDisc.addColorStop(1, '#ffb703');
+        sunDisc.addColorStop(0.35, '#fff7a2');
+        sunDisc.addColorStop(0.72, '#ffc720');
+        sunDisc.addColorStop(1.0, '#ff9100');
         ctx.fillStyle = sunDisc;
         ctx.beginPath();
-        ctx.arc(sx, sy, 20, 0, Math.PI * 2);
+        ctx.arc(sx, sy, 22, 0, Math.PI * 2);
         ctx.fill();
+
+        // Delicate Golden Inner Corona Rim
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 21.5, 0, Math.PI * 2);
+        ctx.stroke();
 
         ctx.restore();
       }
 
-      // 3. Twinkling Night Stars
+      // 3. Twinkling Night Stars & Diamond Sparkles
       if (state.starsAlpha > 0.02) {
         ctx.save();
-        this.stars.forEach(s => {
-          const a = state.starsAlpha * (s.baseAlpha + Math.sin(s.twinklePhase) * 0.35);
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, a)})`;
-          ctx.beginPath();
-          ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-          ctx.fill();
+        this.stars.forEach((s, idx) => {
+          const a = state.starsAlpha * (s.baseAlpha + Math.sin(s.twinklePhase) * 0.4);
+          if (a <= 0.01) return;
+
+          // Prominent stars get 4-point diamond cross glints
+          if (idx % 6 === 0) {
+            ctx.strokeStyle = `rgba(255, 255, 255, ${a * 0.75})`;
+            ctx.lineWidth = 1.0;
+            const glint = s.radius * 3.6;
+            ctx.beginPath();
+            ctx.moveTo(s.x - glint, s.y); ctx.lineTo(s.x + glint, s.y);
+            ctx.moveTo(s.x, s.y - glint); ctx.lineTo(s.x, s.y + glint);
+            ctx.stroke();
+
+            ctx.fillStyle = idx % 12 === 0 ? `rgba(254, 240, 138, ${a})` : `rgba(255, 255, 255, ${a})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius * 1.3, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = idx % 5 === 0 ? `rgba(254, 240, 138, ${a})` : `rgba(255, 255, 255, ${a})`;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+            ctx.fill();
+          }
         });
         ctx.restore();
       }
 
-      // 4. Night Golden Moon
+      // 4. Night Luminous Celestial Moon ("cerul mai frumos soarele si luna")
       if (state.moonAlpha > 0.01) {
         const mx = 85;
         const my = state.moonY;
         ctx.save();
         ctx.globalAlpha = state.moonAlpha;
 
-        // Moon Glow
-        const mHalo = ctx.createRadialGradient(mx, my, 8, mx, my, 52);
-        mHalo.addColorStop(0, 'rgba(255, 245, 190, 0.45)');
-        mHalo.addColorStop(0.5, 'rgba(255, 214, 10, 0.15)');
-        mHalo.addColorStop(1, 'rgba(255, 214, 10, 0)');
+        // A. Ethereal Moonlight Halo (Soft cyan-silver to warm starlight gold)
+        const mHalo = ctx.createRadialGradient(mx, my, 8, mx, my, 70);
+        mHalo.addColorStop(0, 'rgba(224, 242, 254, 0.58)');
+        mHalo.addColorStop(0.35, 'rgba(254, 240, 138, 0.22)');
+        mHalo.addColorStop(0.7, 'rgba(186, 230, 253, 0.08)');
+        mHalo.addColorStop(1, 'rgba(186, 230, 253, 0)');
         ctx.fillStyle = mHalo;
         ctx.beginPath();
-        ctx.arc(mx, my, 52, 0, Math.PI * 2);
+        ctx.arc(mx, my, 70, 0, Math.PI * 2);
         ctx.fill();
 
-        // Luminous Moon Body
-        ctx.fillStyle = '#fffbe8';
+        // B. Secondary Starburst Glint around Moon
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.lineWidth = 1.0;
         ctx.beginPath();
-        ctx.arc(mx, my, 17, 0, Math.PI * 2);
+        ctx.moveTo(mx - 34, my); ctx.lineTo(mx + 34, my);
+        ctx.moveTo(mx, my - 34); ctx.lineTo(mx, my + 34);
+        ctx.stroke();
+
+        // C. 3D Spherical Moon Body
+        const moonGrad = ctx.createRadialGradient(mx - 6, my - 6, 3, mx, my, 21);
+        moonGrad.addColorStop(0, '#ffffff');
+        moonGrad.addColorStop(0.45, '#fffce8');
+        moonGrad.addColorStop(0.85, '#fef08a');
+        moonGrad.addColorStop(1.0, '#e2e8f0');
+        ctx.fillStyle = moonGrad;
+        ctx.beginPath();
+        ctx.arc(mx, my, 20, 0, Math.PI * 2);
         ctx.fill();
 
-        // Soft Moon Craters
-        ctx.fillStyle = '#fde68a';
+        // D. Stylized Lunar Maria (Soft organic dark contours on the lunar surface)
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.30)';
         ctx.beginPath();
-        ctx.arc(mx - 3, my + 3, 3.5, 0, Math.PI * 2);
-        ctx.arc(mx + 4, my - 3, 2.5, 0, Math.PI * 2);
-        ctx.arc(mx + 3, my + 5, 2, 0, Math.PI * 2);
+        ctx.ellipse(mx - 5, my - 3, 6, 9, -0.2, 0, Math.PI * 2);
         ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(mx + 6, my - 6, 5, 4.5, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(mx + 5, my + 6, 7, 5, -0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // E. Detailed Craters with 3D Light & Shadow
+        const craters = [
+          { x: mx - 4, y: my + 5, r: 3.8 },
+          { x: mx + 6, y: my - 3, r: 2.8 },
+          { x: mx + 3, y: my + 8, r: 2.2 },
+          { x: mx - 8, y: my - 7, r: 2.0 },
+          { x: mx + 9, y: my + 3, r: 1.8 }
+        ];
+
+        craters.forEach(cr => {
+          // Crater shadowed floor
+          ctx.fillStyle = 'rgba(100, 116, 139, 0.42)';
+          ctx.beginPath();
+          ctx.arc(cr.x, cr.y, cr.r, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Crater illuminated crescent rim (facing top-left sunward)
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+          ctx.lineWidth = 1.0;
+          ctx.beginPath();
+          ctx.arc(cr.x - 0.4, cr.y - 0.4, cr.r, 0.7 * Math.PI, 1.8 * Math.PI);
+          ctx.stroke();
+        });
+
+        // F. Brilliant Outer Crescent Rim Specular
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(mx, my, 19.5, 0.85 * Math.PI, 1.85 * Math.PI);
+        ctx.stroke();
 
         ctx.restore();
       }
 
-      // 5. Drifting Fluffy Clouds (Crisp white during day, tinted at sunset)
+      // 5. Drifting Fluffy Cumulus Clouds (Multi-puff with soft ambient depth)
       if (state.cloudsAlpha > 0.02) {
         ctx.save();
         ctx.globalAlpha = state.cloudsAlpha;
         this.clouds.forEach(c => {
           ctx.save();
           ctx.translate(c.x, c.y);
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+
+          // Soft ambient cloud base
+          ctx.fillStyle = isSunset ? 'rgba(255, 215, 200, 0.45)' : 'rgba(210, 230, 250, 0.40)';
           ctx.beginPath();
-          ctx.arc(c.w * 0.3, 0, c.h * 0.55, 0, Math.PI * 2);
-          ctx.arc(c.w * 0.55, -c.h * 0.28, c.h * 0.72, 0, Math.PI * 2);
-          ctx.arc(c.w * 0.8, 0, c.h * 0.5, 0, Math.PI * 2);
+          drawRoundRect(ctx, 4, 4, c.w - 8, c.h * 0.7, c.h * 0.35);
           ctx.fill();
+
+          // Cloud puffs (pure white with subtle warmth)
+          ctx.fillStyle = isSunset ? 'rgba(255, 240, 225, 0.95)' : 'rgba(255, 255, 255, 0.96)';
+          ctx.beginPath();
+          drawRoundRect(ctx, 0, 0, c.w, c.h * 0.7, c.h * 0.35);
+          ctx.arc(c.w * 0.32, -c.h * 0.15, c.h * 0.52, 0, Math.PI * 2);
+          ctx.arc(c.w * 0.58, -c.h * 0.35, c.h * 0.68, 0, Math.PI * 2);
+          ctx.arc(c.w * 0.78, -c.h * 0.12, c.h * 0.48, 0, Math.PI * 2);
+          ctx.fill();
+
           ctx.restore();
         });
         ctx.restore();
@@ -1541,10 +1797,7 @@
       }
     }
 
-    buildSkylineCaches(state) {
-      if (!this.farCtx || !this.nearCtx) return;
-      this.lastSkylineUpdate = this.timeOfDay;
-
+    render3DSkyline(ctx, state) {
       const baseR = (Array.isArray(state.buildingColor) ? state.buildingColor[0] : 82) || 82;
       const baseG = (Array.isArray(state.buildingColor) ? state.buildingColor[1] : 98) || 98;
       const baseB = (Array.isArray(state.buildingColor) ? state.buildingColor[2] : 122) || 122;
@@ -1552,355 +1805,352 @@
       const isNight = state.windowGlowAlpha > 0.42;
       const isSunset = state.lightsGlowAlpha > 0.25;
 
-      const trimColor = `rgba(255, 255, 255, ${0.22 + state.lightsGlowAlpha * 0.35})`;
-      const goldTrim = `rgba(255, 214, 10, ${0.48 + state.lightsGlowAlpha * 0.52})`;
-
-      const makeBuildingGrad = (targetCtx, y, topR, topG, topB, botR, botG, botB) => {
-        const grad = targetCtx.createLinearGradient(0, y, 0, GROUND_Y);
+      // Helper to create vertical building gradient
+      const makeBuildingGrad = (y, topR, topG, topB, botR, botG, botB) => {
+        const grad = ctx.createLinearGradient(0, y, 0, GROUND_Y);
         grad.addColorStop(0, `rgb(${Math.round(topR)}, ${Math.round(topG)}, ${Math.round(topB)})`);
         grad.addColorStop(1, `rgb(${Math.round(botR)}, ${Math.round(botG)}, ${Math.round(botB)})`);
         return grad;
       };
 
       // ==========================================
-      // 1. FAR SKYLINE OFFSCREEN CACHE (Width: 520, Height: GROUND_Y)
-      // Clădiri moderne, curate, arhitecturale - FĂRĂ ANTENE, FĂRĂ STÂLPI
+      // LAYER 1: FAR DISTANT MEGACITY SKYLINE (Parallax 0.07x)
+      // Clean Architectural Silhouettes (FARA ANTENE)
       // ==========================================
-      const fctx = this.farCtx;
-      fctx.clearRect(0, 0, this.farWrap, GROUND_Y);
+      const farWrap = 500;
+      ctx.save();
+      ctx.translate(this.farSkylineX, 0);
 
       const farAlpha = 0.58 + state.windowGlowAlpha * 0.22;
       const farR = Math.min(255, Math.round(baseR * 0.72 + 38));
       const farG = Math.min(255, Math.round(baseG * 0.72 + 45));
       const farB = Math.min(255, Math.round(baseB * 0.72 + 62));
       const farColor = `rgba(${farR}, ${farG}, ${farB}, ${farAlpha})`;
-      const farDarkColor = `rgba(${Math.round(farR * 0.82)}, ${Math.round(farG * 0.82)}, ${Math.round(farB * 0.85)}, ${farAlpha})`;
+      const farDarkColor = `rgba(${Math.round(farR * 0.8)}, ${Math.round(farG * 0.8)}, ${Math.round(farB * 0.8)}, ${farAlpha})`;
 
-      fctx.fillStyle = farColor;
+      for (let offset = -farWrap; offset <= V_WIDTH + farWrap; offset += farWrap) {
+        ctx.save();
+        ctx.translate(offset, 0);
 
-      // Far 1: Turn modern cu terasă retrasă (x: 10, w: 46, y: 310)
-      fctx.fillRect(10, 310, 46, GROUND_Y - 310);
-      fctx.fillStyle = farDarkColor;
-      fctx.fillRect(18, 290, 30, 20); // Etaj tehnic retras minimalist
-      fctx.fillStyle = farColor;
+        // Far 1: Modern Stepped Apex Tower (Clean, no antenna)
+        ctx.fillStyle = farColor;
+        ctx.fillRect(15, 305, 36, GROUND_Y - 305 + 5);
+        ctx.fillRect(23, 275, 20, 30);
+        ctx.fillRect(29, 255, 8, 20);
 
-      // Far 2: Zgârie-nori în trepte elegante (x: 68, w: 52, y: 285)
-      fctx.fillRect(68, 335, 52, GROUND_Y - 335);
-      fctx.fillRect(76, 310, 36, 25);
-      fctx.fillRect(84, 285, 20, 25); // Coroană geometrică curată (fără ac/antenă)
+        // Far 2: Stepped Art Deco High-Rise (Clean, no antenna)
+        ctx.fillRect(66, 335, 48, GROUND_Y - 335 + 5);
+        ctx.fillRect(75, 312, 30, 23);
+        ctx.fillRect(83, 290, 14, 22);
 
-      // Far 3: Clădire cu acoperiș oblic din sticlă (x: 132, w: 56, y: 295)
-      fctx.beginPath();
-      fctx.moveTo(132, GROUND_Y);
-      fctx.lineTo(132, 330);
-      fctx.lineTo(188, 295);
-      fctx.lineTo(188, GROUND_Y);
-      fctx.closePath();
-      fctx.fill();
+        // Far 3: Sloped Crown Skyscraper
+        ctx.beginPath();
+        ctx.moveTo(130, GROUND_Y);
+        ctx.lineTo(130, 330);
+        ctx.lineTo(178, 298);
+        ctx.lineTo(178, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
 
-      // Far 4: Bloc modern înalt (x: 202, w: 66, y: 312)
-      fctx.fillRect(202, 320, 66, GROUND_Y - 320);
-      fctx.fillStyle = farDarkColor;
-      fctx.fillRect(218, 306, 34, 14); // Pavilion terasă plat
-      fctx.fillStyle = farColor;
+        // Far 4: High-Rise Block with Penthouse Terrace (Clean, no antenna)
+        ctx.fillRect(198, 320, 64, GROUND_Y - 320 + 5);
+        ctx.fillRect(216, 305, 28, 15);
 
-      // Far 5: Obelisc contemporan din sticlă (x: 282, w: 52, y: 280)
-      fctx.fillRect(282, 315, 52, GROUND_Y - 315);
-      fctx.beginPath();
-      fctx.moveTo(282, 315);
-      fctx.lineTo(308, 280);
-      fctx.lineTo(334, 315);
-      fctx.closePath();
-      fctx.fill();
+        // Far 5: Modern Glass Obelisk (Triangular Peak, no beacon)
+        ctx.fillRect(284, 315, 46, GROUND_Y - 315 + 5);
+        ctx.beginPath();
+        ctx.moveTo(284, 315);
+        ctx.lineTo(307, 280);
+        ctx.lineTo(330, 315);
+        ctx.closePath();
+        ctx.fill();
 
-      // Far 6: Turnuri gemene metropolitane cu pod panoramic (x: 348, w: 72, y: 310)
-      fctx.fillRect(348, 325, 28, GROUND_Y - 325);
-      fctx.fillRect(384, 310, 30, GROUND_Y - 310);
-      fctx.fillStyle = isNight ? 'rgba(255, 240, 138, 0.55)' : farDarkColor;
-      fctx.fillRect(374, 335, 12, 16); // Skybridge
-      fctx.fillStyle = farColor;
+        // Far 6: Metropolitan Twin Tower with Skybridge (Clean, no antenna)
+        ctx.fillRect(352, 330, 26, GROUND_Y - 330 + 5);
+        ctx.fillRect(384, 318, 28, GROUND_Y - 318 + 5);
+        ctx.fillRect(378, 345, 6, 20); // Skybridge
 
-      // Far 7: Sediul corporativ cu terasă verde (x: 432, w: 76, y: 330)
-      fctx.fillRect(432, 335, 76, GROUND_Y - 335);
-      fctx.fillStyle = farDarkColor;
-      fctx.fillRect(448, 322, 44, 13);
-      fctx.fillStyle = farColor;
+        // Far 7: Distant Wide High-Rise Block
+        ctx.fillRect(430, 340, 52, GROUND_Y - 340 + 5);
+        ctx.fillRect(444, 326, 24, 14);
 
-      // Ferestre de fundal (micro-luminițe discrete)
-      if (state.windowGlowAlpha > 0.18) {
-        fctx.fillStyle = isNight ? 'rgba(254, 240, 138, 0.48)' : 'rgba(186, 230, 253, 0.35)';
-        const farWins = [
-          [20, 325], [26, 345], [32, 365], [38, 385],
-          [78, 345], [86, 355], [92, 375], [100, 395],
-          [144, 335], [154, 355], [166, 375], [176, 395],
-          [212, 332], [226, 346], [242, 360], [254, 376],
-          [294, 330], [306, 350], [318, 370],
-          [356, 345], [362, 368], [392, 330], [398, 352],
-          [446, 350], [462, 368], [478, 385], [492, 365]
-        ];
-        farWins.forEach(([wx, wy]) => {
-          fctx.fillRect(wx, wy, 2.5, 3.5);
-        });
+        // Distant Micro-Windows (Glittering pinpoints of city lights)
+        if (state.windowGlowAlpha > 0.2) {
+          ctx.fillStyle = isNight ? 'rgba(254, 240, 138, 0.45)' : 'rgba(186, 230, 253, 0.35)';
+          const farWins = [
+            [22, 325], [28, 345], [32, 365], [78, 345], [86, 355], [92, 375],
+            [142, 335], [152, 355], [162, 375], [210, 335], [225, 348], [240, 360],
+            [295, 335], [305, 355], [360, 350], [392, 338], [445, 360], [460, 375]
+          ];
+          farWins.forEach(([wx, wy]) => {
+            ctx.fillRect(wx, wy, 2.5, 3.5);
+          });
+        }
+
+        ctx.restore();
       }
+      ctx.restore();
 
       // ==========================================
-      // 2. NEAR SKYLINE OFFSCREEN CACHE (Width: 560, Height: GROUND_Y)
-      // Clădiri 3D masive, fațade din sticlă, terase elegante - FĂRĂ ANTENE!
+      // LAYER 2: NEAR ARCHITECTURAL 3D CITY TOWERS (Parallax 0.20x)
+      // Cladiri Impecabile, FARA ANTENE, 3D Facets & Seamless Wrapping (580px)
       // ==========================================
-      const nctx = this.nearCtx;
-      nctx.clearRect(0, 0, this.nearWrap, GROUND_Y);
+      const nearWrap = 580;
+      ctx.save();
+      ctx.translate(this.nearSkylineX, 0);
 
-      // -------------------------------------------------------------
-      // TOWER 1: Corporate Glass Apex (x: 12, w: 72, y: 310, depth: 16)
-      // Coroană modernă oblică din sticlă + Sky-Lounge (Fără antenă)
-      // -------------------------------------------------------------
-      const t1X = 12, t1Y = 310, t1W = 72, t1D = 16, t1Slope = 14;
-      const t1Grad = makeBuildingGrad(nctx, t1Y, baseR + 8, baseG + 14, baseB + 28, baseR * 0.65, baseG * 0.65, baseB * 0.72);
-      const t1DGrad = makeBuildingGrad(nctx, t1Y - t1Slope, baseR * 0.55, baseG * 0.58, baseB * 0.68, baseR * 0.35, baseG * 0.35, baseB * 0.42);
+      const trimColor = `rgba(255, 255, 255, ${0.25 + state.lightsGlowAlpha * 0.40})`;
+      const goldTrim = `rgba(255, 214, 10, ${0.55 + state.lightsGlowAlpha * 0.45})`;
 
-      // Fațadă principală cu unghi arhitectural
-      nctx.fillStyle = t1Grad;
-      nctx.beginPath();
-      nctx.moveTo(t1X, GROUND_Y);
-      nctx.lineTo(t1X, t1Y + t1Slope);
-      nctx.lineTo(t1X + t1W, t1Y);
-      nctx.lineTo(t1X + t1W, GROUND_Y);
-      nctx.closePath();
-      nctx.fill();
+      for (let offset = -nearWrap; offset <= V_WIDTH + nearWrap; offset += nearWrap) {
+        ctx.save();
+        ctx.translate(offset, 0);
 
-      // Fațetă 3D laterală
-      nctx.fillStyle = t1DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t1X + t1W, t1Y);
-      nctx.lineTo(t1X + t1W + t1D, t1Y - 7);
-      nctx.lineTo(t1X + t1W + t1D, GROUND_Y);
-      nctx.lineTo(t1X + t1W, GROUND_Y);
-      nctx.closePath();
-      nctx.fill();
+        // -------------------------------------------------------------
+        // TOWER 1: Corporate Glass Apex (x: 12, w: 72, y: 310, depth: 16)
+        // Sleek Angled Glass Crown + LED Cornice (FARA ANTENE)
+        // -------------------------------------------------------------
+        const t1X = 12, t1Y = 310, t1W = 72, t1D = 16, t1Slope = 14;
+        const t1Grad = makeBuildingGrad(t1Y, baseR + 8, baseG + 14, baseB + 28, baseR * 0.65, baseG * 0.65, baseB * 0.72);
+        const t1DGrad = makeBuildingGrad(t1Y - t1Slope, baseR * 0.55, baseG * 0.58, baseB * 0.68, baseR * 0.35, baseG * 0.35, baseB * 0.42);
 
-      // Linie de contur elegantă din sticlă
-      nctx.strokeStyle = trimColor;
-      nctx.lineWidth = 2.4;
-      nctx.beginPath();
-      nctx.moveTo(t1X, t1Y + t1Slope);
-      nctx.lineTo(t1X + t1W, t1Y);
-      nctx.stroke();
+        // Facade with angled crown
+        ctx.fillStyle = t1Grad;
+        ctx.beginPath();
+        ctx.moveTo(t1X, GROUND_Y);
+        ctx.lineTo(t1X, t1Y + t1Slope);
+        ctx.lineTo(t1X + t1W, t1Y);
+        ctx.lineTo(t1X + t1W, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
 
-      // Penthouse Sky-Lounge pe acoperiș
-      nctx.fillStyle = isNight ? 'rgba(147, 197, 253, 0.45)' : 'rgba(255, 255, 255, 0.35)';
-      nctx.fillRect(t1X + 16, t1Y + 3, t1W - 24, 10);
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t1X + 16, t1Y + 3, t1W - 24, 1.8);
+        // 3D Side depth facet
+        ctx.fillStyle = t1DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t1X + t1W, t1Y);
+        ctx.lineTo(t1X + t1W + t1D, t1Y - 7);
+        ctx.lineTo(t1X + t1W + t1D, GROUND_Y);
+        ctx.lineTo(t1X + t1W, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
 
-      // Ferestre
-      this.renderBuildingWindows(nctx, t1X + 8, t1Y + 22, t1W - 16, GROUND_Y - t1Y - 32, 2, 7, state, 1);
+        // Angled glass crown highlight
+        ctx.strokeStyle = trimColor;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(t1X, t1Y + t1Slope);
+        ctx.lineTo(t1X + t1W, t1Y);
+        ctx.stroke();
 
-      // -------------------------------------------------------------
-      // TOWER 2: Art-Deco Stepped Skyscraper (x: 104, w: 86, depth: 16)
-      // 3 Trepte Maiestuoase + Cornișe Aurii + Vârf Arhitectural Deco (Fără ac)
-      // -------------------------------------------------------------
-      const t2X = 104, t2D = 16;
-      const t2Grad = makeBuildingGrad(nctx, 250, baseR + 14, baseG + 10, baseB + 18, baseR * 0.6, baseG * 0.58, baseB * 0.65);
-      const t2DGrad = makeBuildingGrad(nctx, 245, baseR * 0.5, baseG * 0.45, baseB * 0.55, baseR * 0.3, baseG * 0.28, baseB * 0.35);
+        // Clean rooftop architectural border (NO ANTENNA!)
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t1X + t1W - 16, t1Y - 3, 16, 3);
 
-      // Nivel 1 (Baza)
-      nctx.fillStyle = t2Grad;
-      nctx.fillRect(t2X, 350, 86, GROUND_Y - 350 + 5);
-      nctx.fillStyle = t2DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t2X + 86, 350);
-      nctx.lineTo(t2X + 86 + t2D, 343);
-      nctx.lineTo(t2X + 86 + t2D, GROUND_Y);
-      nctx.lineTo(t2X + 86, GROUND_Y);
-      nctx.closePath();
-      nctx.fill();
-      nctx.fillStyle = goldTrim;
-      nctx.fillRect(t2X, 350, 86, 3);
+        // Windows
+        this.renderBuildingWindows(ctx, t1X + 8, t1Y + 22, t1W - 16, GROUND_Y - t1Y - 32, 2, 7, state, 1);
 
-      // Nivel 2 (Mijloc)
-      nctx.fillStyle = t2Grad;
-      nctx.fillRect(t2X + 13, 295, 60, 55);
-      nctx.fillStyle = t2DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t2X + 73, 295);
-      nctx.lineTo(t2X + 73 + 12, 289);
-      nctx.lineTo(t2X + 73 + 12, 350);
-      nctx.lineTo(t2X + 73, 350);
-      nctx.closePath();
-      nctx.fill();
-      nctx.fillStyle = goldTrim;
-      nctx.fillRect(t2X + 13, 295, 60, 3);
+        // -------------------------------------------------------------
+        // TOWER 2: Art-Deco Stepped Skyscraper (x: 102, w: 86, depth: 16)
+        // 3 Majestic Setback Tiers + Golden Parapets (FARA ANTENE)
+        // -------------------------------------------------------------
+        const t2X = 102, t2D = 16;
+        const t2Grad = makeBuildingGrad(250, baseR + 14, baseG + 10, baseB + 18, baseR * 0.6, baseG * 0.58, baseB * 0.65);
+        const t2DGrad = makeBuildingGrad(245, baseR * 0.5, baseG * 0.45, baseB * 0.55, baseR * 0.3, baseG * 0.28, baseB * 0.35);
 
-      // Nivel 3 (Vârf geometric Art-Deco)
-      nctx.fillStyle = t2Grad;
-      nctx.fillRect(t2X + 25, 250, 36, 45);
-      nctx.fillStyle = t2DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t2X + 61, 250);
-      nctx.lineTo(t2X + 61 + 9, 245);
-      nctx.lineTo(t2X + 61 + 9, 295);
-      nctx.lineTo(t2X + 61, 295);
-      nctx.closePath();
-      nctx.fill();
-      nctx.fillStyle = goldTrim;
-      nctx.fillRect(t2X + 25, 250, 36, 3.5);
+        // Tier 1 (Base): y: 350 to GROUND_Y
+        ctx.fillStyle = t2Grad;
+        ctx.fillRect(t2X, 350, 86, GROUND_Y - 350 + 5);
+        ctx.fillStyle = t2DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t2X + 86, 350);
+        ctx.lineTo(t2X + 86 + t2D, 343);
+        ctx.lineTo(t2X + 86 + t2D, GROUND_Y);
+        ctx.lineTo(t2X + 86, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t2X, 350, 86, 3);
 
-      // Coroană decorativă aurie Art-Deco (înlocuiește vechiul ac/antenă)
-      nctx.fillStyle = goldTrim;
-      nctx.fillRect(t2X + 29, 242, 28, 8);
-      nctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-      nctx.fillRect(t2X + 31, 242, 24, 2);
-      for (let f = 0; f < 4; f++) {
-        nctx.fillStyle = '#ffc300';
-        nctx.fillRect(t2X + 33 + f * 6, 244, 2.5, 6);
+        // Tier 2 (Mid): y: 295 to 350
+        ctx.fillStyle = t2Grad;
+        ctx.fillRect(t2X + 13, 295, 60, 55);
+        ctx.fillStyle = t2DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t2X + 73, 295);
+        ctx.lineTo(t2X + 73 + 12, 289);
+        ctx.lineTo(t2X + 73 + 12, 350);
+        ctx.lineTo(t2X + 73, 350);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t2X + 13, 295, 60, 3);
+
+        // Tier 3 (Pinnacle): y: 250 to 295
+        ctx.fillStyle = t2Grad;
+        ctx.fillRect(t2X + 25, 250, 36, 45);
+        ctx.fillStyle = t2DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t2X + 61, 250);
+        ctx.lineTo(t2X + 61 + 9, 245);
+        ctx.lineTo(t2X + 61 + 9, 295);
+        ctx.lineTo(t2X + 61, 295);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t2X + 25, 250, 36, 3.5);
+
+        // Art-Deco Pyramid Cap on Pinnacle (Clean geometric crown, NO ANTENNA SPIRE!)
+        ctx.fillStyle = t2Grad;
+        ctx.beginPath();
+        ctx.moveTo(t2X + 28, 250);
+        ctx.lineTo(t2X + 43, 228);
+        ctx.lineTo(t2X + 58, 250);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = goldTrim;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+
+        // Windows for Tier 1 and Tier 2
+        this.renderBuildingWindows(ctx, t2X + 8, 360, 70, GROUND_Y - 370, 3, 6, state, 2);
+        this.renderBuildingWindows(ctx, t2X + 20, 305, 46, 40, 2, 2, state, 7);
+
+        // -------------------------------------------------------------
+        // TOWER 3: High-Tech Glass Tower with Penthouse Terrace (x: 206, w: 68, y: 340)
+        // Clean Luxury Terrace Architecture (FARA BAZIN/STRUTS!)
+        // -------------------------------------------------------------
+        const t3X = 206, t3Y = 340, t3W = 68, t3D = 14;
+        const t3Grad = makeBuildingGrad(t3Y, baseR + 2, baseG + 8, baseB + 20, baseR * 0.6, baseG * 0.62, baseB * 0.7);
+        const t3DGrad = makeBuildingGrad(t3Y, baseR * 0.48, baseG * 0.52, baseB * 0.6, baseR * 0.32, baseG * 0.34, baseB * 0.4);
+
+        // Facade & Depth
+        ctx.fillStyle = t3Grad;
+        ctx.fillRect(t3X, t3Y, t3W, GROUND_Y - t3Y + 5);
+        ctx.fillStyle = t3DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t3X + t3W, t3Y);
+        ctx.lineTo(t3X + t3W + t3D, t3Y - 6);
+        ctx.lineTo(t3X + t3W + t3D, GROUND_Y);
+        ctx.lineTo(t3X + t3W, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = trimColor;
+        ctx.fillRect(t3X, t3Y, t3W, 3);
+
+        // Penthouse luxury pavilion with panoramic glass (Clean, architectural)
+        ctx.fillStyle = t3Grad;
+        ctx.fillRect(t3X + 12, t3Y - 14, 44, 14);
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t3X + 10, t3Y - 14, 48, 2.5);
+        ctx.fillStyle = isNight ? 'rgba(254, 240, 138, 0.75)' : 'rgba(186, 230, 253, 0.45)';
+        ctx.fillRect(t3X + 16, t3Y - 11, 36, 8);
+
+        // Windows
+        this.renderBuildingWindows(ctx, t3X + 8, t3Y + 12, t3W - 16, GROUND_Y - t3Y - 20, 2, 6, state, 3);
+
+        // -------------------------------------------------------------
+        // TOWER 4: Grand Meso 16 Ani Celebration Plaza Tower (x: 292, w: 88, y: 285)
+        // Grand Facade + Illuminated Meso Golden Sign (FARA ANTENE)
+        // -------------------------------------------------------------
+        const t4X = 292, t4Y = 285, t4W = 88, t4D = 16;
+        const t4Grad = makeBuildingGrad(t4Y, baseR + 10, baseG + 22, baseB + 16, baseR * 0.58, baseG * 0.65, baseB * 0.62);
+        const t4DGrad = makeBuildingGrad(t4Y, baseR * 0.45, baseG * 0.55, baseB * 0.52, baseR * 0.3, baseG * 0.38, baseB * 0.35);
+
+        // Facade & Depth
+        ctx.fillStyle = t4Grad;
+        ctx.fillRect(t4X, t4Y, t4W, GROUND_Y - t4Y + 5);
+        ctx.fillStyle = t4DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t4X + t4W, t4Y);
+        ctx.lineTo(t4X + t4W + t4D, t4Y - 8);
+        ctx.lineTo(t4X + t4W + t4D, GROUND_Y);
+        ctx.lineTo(t4X + t4W, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Elegant Double Cornice
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t4X, t4Y, t4W, 4);
+        ctx.fillStyle = trimColor;
+        ctx.fillRect(t4X + 4, t4Y - 4, t4W - 8, 4);
+
+        // Illuminated Meso Crown Crest on Rooftop Plinth (Clean, NO CORNER ANTENNAS!)
+        const crownAlpha = 0.65 + state.lightsGlowAlpha * 0.35;
+        ctx.fillStyle = `rgba(255, 195, 0, ${crownAlpha})`;
+        drawRoundRect(ctx, t4X + t4W / 2 - 22, t4Y - 16, 44, 12, 3);
+        ctx.fill();
+        ctx.strokeStyle = '#ffd60a';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        ctx.fillStyle = '#1e293b';
+        ctx.font = '900 8px "Outfit", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('MESO 16', t4X + t4W / 2, t4Y - 7);
+
+        // Windows
+        this.renderBuildingWindows(ctx, t4X + 8, t4Y + 14, t4W - 16, GROUND_Y - t4Y - 22, 3, 8, state, 4);
+
+        // -------------------------------------------------------------
+        // TOWER 5: Metro High-Rise with Balconies (x: 400, w: 66, y: 340)
+        // -------------------------------------------------------------
+        const t5X = 400, t5Y = 340, t5W = 66, t5D = 14;
+        const t5Grad = makeBuildingGrad(t5Y, baseR + 6, baseG + 8, baseB + 14, baseR * 0.62, baseG * 0.62, baseB * 0.68);
+        const t5DGrad = makeBuildingGrad(t5Y, baseR * 0.5, baseG * 0.5, baseB * 0.55, baseR * 0.32, baseG * 0.32, baseB * 0.38);
+
+        ctx.fillStyle = t5Grad;
+        ctx.fillRect(t5X, t5Y, t5W, GROUND_Y - t5Y + 5);
+        ctx.fillStyle = t5DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t5X + t5W, t5Y);
+        ctx.lineTo(t5X + t5W + t5D, t5Y - 6);
+        ctx.lineTo(t5X + t5W + t5D, GROUND_Y);
+        ctx.lineTo(t5X + t5W, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = trimColor;
+        ctx.fillRect(t5X, t5Y, t5W, 3);
+
+        // Rooftop Penthouse Terrace (Clean parapet)
+        ctx.fillStyle = t5Grad;
+        ctx.fillRect(t5X + 14, t5Y - 14, 38, 14);
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t5X + 14, t5Y - 14, 38, 2.5);
+
+        this.renderBuildingWindows(ctx, t5X + 8, t5Y + 12, t5W - 16, GROUND_Y - t5Y - 18, 2, 6, state, 5);
+
+        // -------------------------------------------------------------
+        // TOWER 6: Contemporary Angular Monolith (x: 484, w: 70, y: 320)
+        // Sleek Flat Architectural Cornice (FARA ANTENE)
+        // -------------------------------------------------------------
+        const t6X = 484, t6Y = 320, t6W = 70, t6D = 15;
+        const t6Grad = makeBuildingGrad(t6Y, baseR + 10, baseG + 16, baseB + 30, baseR * 0.65, baseG * 0.68, baseB * 0.75);
+        const t6DGrad = makeBuildingGrad(t6Y, baseR * 0.52, baseG * 0.55, baseB * 0.62, baseR * 0.34, baseG * 0.36, baseB * 0.42);
+
+        ctx.fillStyle = t6Grad;
+        ctx.fillRect(t6X, t6Y, t6W, GROUND_Y - t6Y + 5);
+        ctx.fillStyle = t6DGrad;
+        ctx.beginPath();
+        ctx.moveTo(t6X + t6W, t6Y);
+        ctx.lineTo(t6X + t6W + t6D, t6Y - 7);
+        ctx.lineTo(t6X + t6W + t6D, GROUND_Y);
+        ctx.lineTo(t6X + t6W, GROUND_Y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = trimColor;
+        ctx.fillRect(t6X, t6Y, t6W, 3);
+
+        // Setback Cornice (NO ANTENNA!)
+        ctx.fillStyle = t6Grad;
+        ctx.fillRect(t6X + 16, t6Y - 12, 38, 12);
+        ctx.fillStyle = goldTrim;
+        ctx.fillRect(t6X + 14, t6Y - 12, 42, 2.5);
+
+        this.renderBuildingWindows(ctx, t6X + 8, t6Y + 12, t6W - 16, GROUND_Y - t6Y - 20, 2, 7, state, 6);
+
+        ctx.restore();
       }
-
-      // Ferestre
-      this.renderBuildingWindows(nctx, t2X + 8, 360, 70, GROUND_Y - 370, 3, 6, state, 2);
-      this.renderBuildingWindows(nctx, t2X + 20, 305, 46, 40, 2, 2, state, 7);
-
-      // -------------------------------------------------------------
-      // TOWER 3: High-Tech Glass Tower & Sky-Terrace (x: 208, w: 68, y: 335)
-      // -------------------------------------------------------------
-      const t3X = 208, t3Y = 335, t3W = 68, t3D = 14;
-      const t3Grad = makeBuildingGrad(nctx, t3Y, baseR + 2, baseG + 8, baseB + 20, baseR * 0.6, baseG * 0.62, baseB * 0.7);
-      const t3DGrad = makeBuildingGrad(nctx, t3Y, baseR * 0.48, baseG * 0.52, baseB * 0.6, baseR * 0.32, baseG * 0.34, baseB * 0.4);
-
-      nctx.fillStyle = t3Grad;
-      nctx.fillRect(t3X, t3Y, t3W, GROUND_Y - t3Y + 5);
-      nctx.fillStyle = t3DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t3X + t3W, t3Y);
-      nctx.lineTo(t3X + t3W + t3D, t3Y - 6);
-      nctx.lineTo(t3X + t3W + t3D, GROUND_Y);
-      nctx.lineTo(t3X + t3W, GROUND_Y);
-      nctx.closePath();
-      nctx.fill();
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t3X, t3Y, t3W, 3);
-
-      // Terasă modernă panoramică și spațiu tehnic elegant pe acoperiș
-      nctx.fillStyle = isNight ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.4)';
-      nctx.fillRect(t3X + 12, t3Y - 14, t3W - 24, 14);
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t3X + 12, t3Y - 14, t3W - 24, 2);
-      nctx.fillStyle = '#334155';
-      nctx.fillRect(t3X + 18, t3Y - 10, 14, 10);
-
-      this.renderBuildingWindows(nctx, t3X + 8, t3Y + 12, t3W - 16, GROUND_Y - t3Y - 20, 2, 6, state, 3);
-
-      // -------------------------------------------------------------
-      // TOWER 4: Grand Meso 16 Ani Celebration Plaza Tower (x: 294, w: 88, y: 280)
-      // Pavilion de sărbătoare iluminat cu sigla MESO 16 (FĂRĂ ANTENE!)
-      // -------------------------------------------------------------
-      const t4X = 294, t4Y = 280, t4W = 88, t4D = 16;
-      const t4Grad = makeBuildingGrad(nctx, t4Y, baseR + 10, baseG + 22, baseB + 16, baseR * 0.58, baseG * 0.65, baseB * 0.62);
-      const t4DGrad = makeBuildingGrad(nctx, t4Y, baseR * 0.45, baseG * 0.55, baseB * 0.52, baseR * 0.3, baseG * 0.38, baseB * 0.35);
-
-      nctx.fillStyle = t4Grad;
-      nctx.fillRect(t4X, t4Y, t4W, GROUND_Y - t4Y + 5);
-      nctx.fillStyle = t4DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t4X + t4W, t4Y);
-      nctx.lineTo(t4X + t4W + t4D, t4Y - 8);
-      nctx.lineTo(t4X + t4W + t4D, GROUND_Y);
-      nctx.lineTo(t4X + t4W, GROUND_Y);
-      nctx.closePath();
-      nctx.fill();
-
-      // Cornișă dublă aurie
-      nctx.fillStyle = goldTrim;
-      nctx.fillRect(t4X, t4Y, t4W, 4);
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t4X + 4, t4Y - 4, t4W - 8, 4);
-
-      // Pavilion aniversar iluminat "MESO 16"
-      const crownAlpha = 0.65 + state.lightsGlowAlpha * 0.35;
-      nctx.fillStyle = `rgba(255, 195, 0, ${crownAlpha})`;
-      nctx.fillRect(t4X + t4W / 2 - 24, t4Y - 16, 48, 12);
-      nctx.fillStyle = '#ffffff';
-      nctx.font = 'bold 8.5px "Outfit", sans-serif';
-      nctx.textAlign = 'center';
-      nctx.fillText('MESO 16', t4X + t4W / 2, t4Y - 7);
-      nctx.strokeStyle = '#ffe066';
-      nctx.lineWidth = 1.4;
-      nctx.strokeRect(t4X + t4W / 2 - 24, t4Y - 16, 48, 12);
-
-      this.renderBuildingWindows(nctx, t4X + 8, t4Y + 14, t4W - 16, GROUND_Y - t4Y - 22, 3, 8, state, 4);
-
-      // -------------------------------------------------------------
-      // TOWER 5: Metro High-Rise cu Balcoane (x: 402, w: 66, y: 335)
-      // -------------------------------------------------------------
-      const t5X = 402, t5Y = 335, t5W = 66, t5D = 14;
-      const t5Grad = makeBuildingGrad(nctx, t5Y, baseR + 6, baseG + 8, baseB + 14, baseR * 0.62, baseG * 0.62, baseB * 0.68);
-      const t5DGrad = makeBuildingGrad(nctx, t5Y, baseR * 0.5, baseG * 0.5, baseB * 0.55, baseR * 0.32, baseG * 0.32, baseB * 0.38);
-
-      nctx.fillStyle = t5Grad;
-      nctx.fillRect(t5X, t5Y, t5W, GROUND_Y - t5Y + 5);
-      nctx.fillStyle = t5DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t5X + t5W, t5Y);
-      nctx.lineTo(t5X + t5W + t5D, t5Y - 6);
-      nctx.lineTo(t5X + t5W + t5D, GROUND_Y);
-      nctx.lineTo(t5X + t5W, GROUND_Y);
-      nctx.closePath();
-      nctx.fill();
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t5X, t5Y, t5W, 3);
-
-      // Penthouse cu terasă retrasă
-      nctx.fillStyle = t5Grad;
-      nctx.fillRect(t5X + 14, t5Y - 14, 38, 14);
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t5X + 14, t5Y - 14, 38, 2);
-
-      this.renderBuildingWindows(nctx, t5X + 8, t5Y + 12, t5W - 16, GROUND_Y - t5Y - 18, 2, 6, state, 5);
-
-      // -------------------------------------------------------------
-      // TOWER 6: Monolit contemporan unghiular (x: 484, w: 64, y: 320)
-      // -------------------------------------------------------------
-      const t6X = 484, t6Y = 320, t6W = 64, t6D = 12;
-      const t6Grad = makeBuildingGrad(nctx, t6Y, baseR + 10, baseG + 16, baseB + 30, baseR * 0.65, baseG * 0.68, baseB * 0.75);
-      const t6DGrad = makeBuildingGrad(nctx, t6Y, baseR * 0.52, baseG * 0.55, baseB * 0.62, baseR * 0.34, baseG * 0.36, baseB * 0.42);
-
-      nctx.fillStyle = t6Grad;
-      nctx.fillRect(t6X, t6Y, t6W, GROUND_Y - t6Y + 5);
-      nctx.fillStyle = t6DGrad;
-      nctx.beginPath();
-      nctx.moveTo(t6X + t6W, t6Y);
-      nctx.lineTo(t6X + t6W + t6D, t6Y - 7);
-      nctx.lineTo(t6X + t6W + t6D, GROUND_Y);
-      nctx.lineTo(t6X + t6W, GROUND_Y);
-      nctx.closePath();
-      nctx.fill();
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t6X, t6Y, t6W, 3);
-
-      // Coroană beveled modernă (fără antenă)
-      nctx.fillStyle = t6Grad;
-      nctx.fillRect(t6X + 12, t6Y - 12, t6W - 24, 12);
-      nctx.fillStyle = trimColor;
-      nctx.fillRect(t6X + 12, t6Y - 12, t6W - 24, 2);
-
-      this.renderBuildingWindows(nctx, t6X + 8, t6Y + 12, t6W - 16, GROUND_Y - t6Y - 20, 2, 7, state, 6);
-    }
-
-    render3DSkyline(ctx, state) {
-      if (!this.farCanvas || !this.nearCanvas) return;
-
-      // LAYER 1: FAR DISTANT MEGACITY SKYLINE (Parallax 0.08x)
-      const fWrap = this.farWrap;
-      let fx = ((this.farSkylineX % fWrap) + fWrap) % fWrap;
-      for (let x = fx - fWrap; x < V_WIDTH + fWrap; x += fWrap) {
-        ctx.drawImage(this.farCanvas, x, 0);
-      }
-
-      // LAYER 2: NEAR ARCHITECTURAL 3D CITY TOWERS (Parallax 0.22x)
-      const nWrap = this.nearWrap;
-      let nx = ((this.nearSkylineX % nWrap) + nWrap) % nWrap;
-      for (let x = nx - nWrap; x < V_WIDTH + nWrap; x += nWrap) {
-        ctx.drawImage(this.nearCanvas, x, 0);
-      }
+      ctx.restore();
     }
 
     renderBuildingWindows(ctx, startX, startY, totalW, totalH, cols, rows, state, seed = 1) {
@@ -2033,9 +2283,6 @@
 
       this.scaleX = this.canvas.width / V_WIDTH;
       this.scaleY = this.canvas.height / V_HEIGHT;
-
-      this.ctx.imageSmoothingEnabled = true;
-      this.ctx.imageSmoothingQuality = 'high';
     }
 
     loadAssets() {
@@ -2065,7 +2312,6 @@
 
       // Keyboard Controls
       window.addEventListener('keydown', (e) => {
-        if (e.repeat) return; // Previne salturile repetitive necontrolate la ținerea apăsată a tastei
         if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
           e.preventDefault();
           this.triggerFlap();
@@ -2170,6 +2416,9 @@
 
     goToStartScreen() {
       this.state = 'START';
+      this.candles = [];
+      this.doners = [];
+      this.roadSigns = [];
       document.getElementById('screen-gameover').classList.add('hidden');
       document.getElementById('screen-pause').classList.add('hidden');
       document.getElementById('screen-start').classList.remove('hidden');
@@ -2206,7 +2455,6 @@
       } else if (this.state === 'PLAYING') {
         this.bird.flap();
         this.sound.playFlap();
-        this.screenShake = Math.max(this.screenShake, 1.2);
         this.particles.spawnFlapEffects(this.bird.x, this.bird.y);
         if (navigator.vibrate) navigator.vibrate(12);
       } else if (this.state === 'GAMEOVER') {
@@ -2218,7 +2466,6 @@
       if (this.state === 'PLAYING') {
         this.bird.quickDive();
         this.sound.playQuickDive();
-        this.screenShake = Math.max(this.screenShake, 2.0);
         if (navigator.vibrate) navigator.vibrate(18);
       }
     }
@@ -2323,7 +2570,6 @@
       this.donerCount++;
 
       this.sound.playDonerCollect();
-      this.screenShake = Math.max(this.screenShake, 2.0);
       this.particles.spawnDonerCollectBurst(doner.x, doner.y);
 
       if (navigator.vibrate) navigator.vibrate([18, 22]);
@@ -2385,16 +2631,16 @@
       }
     }
 
-    // "sa fie din 5 in 5"
+    // "placutele de la oras sa para din 2 in 2 puncte"
     triggerLocationUnlock(score) {
-      const locIdx = Math.floor(score / 5);
+      const locIdx = Math.floor(score / 2);
       this.triggerLocationUnlockByIndex(locIdx);
     }
 
     // "dar sa nu fie exact pe mijlocuil tevi"
     // Calculeaza coordonata X astfel incat pancarda sa fie mereu in spatiul liber dintre tuburi, NICIODATA sub o teava!
     spawnRoadSign(locIdx) {
-      const signW = 184;
+      const signW = 216;
       const pipeDistance = this.scrollSpeed * this.spawnInterval;
       let targetX = V_WIDTH + 80;
 
@@ -2443,8 +2689,10 @@
       }
 
       try {
-        localStorage.setItem('meso_last_score', this.score.toString());
-        localStorage.setItem('meso_last_doners', this.donerCount.toString());
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('meso_last_score', this.score.toString());
+          window.localStorage.setItem('meso_last_doners', this.donerCount.toString());
+        }
       } catch (e) {}
 
       document.getElementById('final-score').innerText = this.score;
@@ -2480,14 +2728,16 @@
     loadCleanRecord() {
       let val = null;
       try {
-        val = localStorage.getItem('meso_best_record');
-        if (val === null) {
-          const oldVal = localStorage.getItem('meso_royal_record');
-          if (oldVal && oldVal !== '775' && parseInt(oldVal, 10) < 500) {
-            val = oldVal;
-          } else {
-            val = '0';
-            localStorage.removeItem('meso_royal_record');
+        if (typeof window !== 'undefined' && window.localStorage) {
+          val = window.localStorage.getItem('meso_best_record');
+          if (val === null) {
+            const oldVal = window.localStorage.getItem('meso_royal_record');
+            if (oldVal && oldVal !== '775' && parseInt(oldVal, 10) < 500) {
+              val = oldVal;
+            } else {
+              val = '0';
+              window.localStorage.removeItem('meso_royal_record');
+            }
           }
         }
       } catch (e) {
@@ -2500,8 +2750,10 @@
       }
 
       try {
-        localStorage.setItem('meso_best_record', parsed.toString());
-        localStorage.setItem('meso_royal_record', parsed.toString());
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('meso_best_record', parsed.toString());
+          window.localStorage.setItem('meso_royal_record', parsed.toString());
+        }
       } catch (e) {}
 
       return parsed;
@@ -2511,8 +2763,10 @@
       const validScore = Math.max(0, parseInt(score, 10) || 0);
       this.highScore = validScore;
       try {
-        localStorage.setItem('meso_best_record', validScore.toString());
-        localStorage.setItem('meso_royal_record', validScore.toString());
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('meso_best_record', validScore.toString());
+          window.localStorage.setItem('meso_royal_record', validScore.toString());
+        }
       } catch (e) {
         console.warn('Nu s-a putut salva recordul:', e);
       }
@@ -2553,16 +2807,16 @@
 
         this.bird.update(dt);
 
-        // Moarte la sol precisă, sincronizată cu atingerea bordurii
-        if (this.bird.y + this.bird.hitboxRadius >= GROUND_Y - 4) {
+        // Ground death
+        if (this.bird.y + this.bird.radius >= GROUND_Y) {
           this.gameOver();
           return;
         }
 
-        // Tavan elastic: nu oprește brusc pasărea ci amortizează lin
+        // Soft ceiling: doesn't kill player if they brush sky top, caps gently
         if (this.bird.y - this.bird.radius <= 0) {
           this.bird.y = this.bird.radius;
-          this.bird.vy = Math.max(0, this.bird.vy * 0.1);
+          this.bird.vy = 0;
         }
 
         this.spawnTimer += dt;
@@ -2595,10 +2849,10 @@
               this.triggerCelebration16();
             }
 
-            // "sa fie din 5 in 5"
+            // "placutele de la oras sa para din 2 in 2 puncte"
             // "dar sa nu fie exact pe mijlocuil tevi" -> spawnRoadSign o plaseaza mereu la jumatatea distantei dintre tuburi!
-            if (this.score > 0 && this.score % 5 === 0) {
-              const locIdx = Math.floor(this.score / 5);
+            if (this.score > 0 && this.score % 2 === 0) {
+              const locIdx = Math.floor(this.score / 2);
               this.triggerLocationUnlockByIndex(locIdx);
               this.spawnRoadSign(locIdx);
             }
@@ -2647,14 +2901,16 @@
         this.particles.update(dt);
 
       } else if (this.state === 'START') {
-        // Pasărea plutește relaxat și fluid pe ecranul principal
+        // "vreau sa se vada pasarea cum zoboara pe ecran principal"
+        // Pasărea zboară liber pe ecranul principal în văzul jucătorului!
         this.bird.x = 200;
-        this.bird.y = 250 + Math.sin(now * 0.0035) * 9;
-        this.bird.rotation = Math.sin(now * 0.0035) * 0.08;
-        this.bird.scaleX = 1.0;
-        this.bird.scaleY = 1.0;
+        this.bird.y = 250 + Math.sin(now * 0.0032) * 8.5;
+        this.bird.rotation = Math.sin(now * 0.0028) * 0.05;
+        this.bird.scaleX = 1.0 + Math.sin(now * 0.004) * 0.03;
+        this.bird.scaleY = 1.0 - Math.sin(now * 0.004) * 0.03;
+        this.bird.flightTime += dt;
 
-        // Începe pe timp de zi senină
+        // "fa sa inceapa zi" -> Starts in pure daytime!
         this.scenery.update(dt, 20, 0.0);
         this.particles.update(dt);
       }
@@ -2662,53 +2918,64 @@
       // ==========================================
       // RENDER 2D SCENE
       // ==========================================
+      // Reset transform and clear canvas completely every frame
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
       this.ctx.save();
+      try {
+        // Dynamic Camera Screen Shake
+        if (this.screenShake > 0) {
+          const shakeX = (Math.random() - 0.5) * this.screenShake;
+          const shakeY = (Math.random() - 0.5) * this.screenShake;
+          this.ctx.translate(shakeX, shakeY);
+          this.screenShake = Math.max(0, this.screenShake - dt * 25);
+        }
 
-      // Dynamic Camera Screen Shake
-      if (this.screenShake > 0) {
-        const shakeX = (Math.random() - 0.5) * this.screenShake;
-        const shakeY = (Math.random() - 0.5) * this.screenShake;
-        this.ctx.translate(shakeX, shakeY);
-        this.screenShake = Math.max(0, this.screenShake - dt * 25);
-      }
+        this.ctx.scale(this.scaleX, this.scaleY);
 
-      this.ctx.scale(this.scaleX, this.scaleY);
+        // 1. Twilight Atmospheric Parallax Sky, Skyline & Lights
+        this.scenery.render(this.ctx);
 
-      // 1. Twilight Atmospheric Parallax Sky, Skyline & Lights
-      this.scenery.render(this.ctx);
+        // 2. 3D Urban Obstacle Cylinders (Never on start screen)
+        if (this.state !== 'START') {
+          this.candles.forEach(c => c.render(this.ctx));
+        }
 
-      // 2. 3D Birthday Candles with Living Flame & Organic Wax Drips
-      this.candles.forEach(c => c.render(this.ctx));
+        // 3. Miniature Golden Döner Coins (Never on start screen)
+        if (this.state !== 'START') {
+          this.doners.forEach(d => d.render(this.ctx));
+        }
 
-      // 3. Miniature Golden Döner Coins
-      this.doners.forEach(d => d.render(this.ctx));
+        // 4. Meso Turkey Mascot
+        this.bird.render(this.ctx);
 
-      // 4. Meso Turkey Mascot
-      this.bird.render(this.ctx);
+        // 5. Video Game Particle Effects (Feathers, Dust, Shockwaves)
+        this.particles.render(this.ctx);
 
-      // 5. Video Game Particle Effects (Feathers, Dust, Shockwaves)
-      this.particles.render(this.ctx);
+        // 6. ASPHALT STREET ROAD ("drumul de jos in miscare")
+        this.scenery.renderGround(this.ctx);
 
-      // 6. ASPHALT STREET ROAD ("drumul de jos in miscare")
-      this.scenery.renderGround(this.ctx);
+        // 7. Town Entrance Road Signs on Road Curb ("pancardă intrare localitate")
+        this.roadSigns.forEach(s => s.render(this.ctx));
 
-      // 7. Town Entrance Road Signs on Road Curb ("pancardă intrare localitate")
-      this.roadSigns.forEach(s => s.render(this.ctx));
-
-      // 8. Big Classic Score in Center Top During Flight
-      if (this.state === 'PLAYING') {
-        this.ctx.save();
-        this.ctx.textAlign = 'center';
-        this.ctx.font = '54px "Lilita One", "Titan One", cursive';
-        this.ctx.strokeStyle = '#1d3d29';
-        this.ctx.lineWidth = 6;
-        this.ctx.strokeText(this.score, V_WIDTH / 2, 98);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText(this.score, V_WIDTH / 2, 98);
+        // 8. Big Classic Score in Center Top During Flight
+        if (this.state === 'PLAYING') {
+          this.ctx.save();
+          this.ctx.textAlign = 'center';
+          this.ctx.font = '54px "Lilita One", "Titan One", cursive';
+          this.ctx.strokeStyle = '#1d3d29';
+          this.ctx.lineWidth = 6;
+          this.ctx.strokeText(this.score, V_WIDTH / 2, 98);
+          this.ctx.fillStyle = '#ffffff';
+          this.ctx.fillText(this.score, V_WIDTH / 2, 98);
+          this.ctx.restore();
+        }
+      } catch (renderErr) {
+        console.error("Render loop error:", renderErr);
+      } finally {
         this.ctx.restore();
       }
-
-      this.ctx.restore();
     }
   }
 

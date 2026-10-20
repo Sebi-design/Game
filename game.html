@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Meso. Game - De 16 Ani Am Crescut Impreuna</title>
-  <meta name="description" content="Meso. Game - De 16 Ani Am Crescut Impreuna. Zboara printre lumanarile aniversare, prinde Doner Kebab Mare si sarbatoreste oferta 1+1 Gratuit!">
+  <meta name="description" content="Meso. Game - De 16 Ani Am Crescut Impreuna. Zboara prin orasul Meso, prinde Doner Kebab Mare si sarbatoreste oferta 1+1 Gratuit!">
   <link rel="icon" type="image/png" href="bird_clean.png">
-  <link rel="stylesheet" href="style.css?v=20.0">
+  <link rel="stylesheet" href="style.css?v=21.0">
 </head>
 <body>
 
@@ -77,26 +77,26 @@
             </div>
           </div>
 
-          <!-- Bottom Action Card -->
+          <!-- Bottom Action Card (Mai Mare & Scris Mai Mare conform cerintei) -->
           <div class="start-bottom-card">
             <div class="cover-brand-row">
               <span class="brand-meso">Meso<span class="brand-dot">.</span></span>
             </div>
 
             <div class="cover-promo-box">
-              <div class="promo-highlight-badge">1+1 GRATUIT</div>
+              <div class="promo-highlight-badge">🔥 1+1 GRATUIT</div>
               <div class="promo-title">DONER KEBAB MARE</div>
-              <div class="promo-date">DOAR PE 31 OCTOMBRIE • IN TOATA TARA!</div>
+              <div class="promo-date">DOAR PE 31 OCTOMBRIE • ÎN TOATĂ ȚARA!</div>
             </div>
 
             <div class="start-actions-row">
-              <div class="record-pill-badge">
-                <span>🏆</span>
-                <span>Record:</span>
+              <div class="record-pill-badge" title="Recordul Tău Personal">
+                <span class="record-icon">🏆</span>
+                <span class="record-label">Record:</span>
                 <span class="record-val" id="royal-record-val">0</span>
               </div>
 
-              <button class="tap-to-fly-btn" id="btn-start">
+              <button class="tap-to-fly-btn" id="btn-start" aria-label="Hai la zbor">
                 <span>HAI LA ZBOR!</span>
                 <span class="btn-emoji">🚀</span>
               </button>
@@ -104,67 +104,49 @@
           </div>
         </div>
 
-        <!-- GAME OVER SCREEN (Super Fun, Arcade Style, Fără Lumanari, Fără Emoji Doner) -->
+        <!-- GAME OVER SCREEN (Eliminat lumanari, emoji doner in tematica meso, card impecabil) -->
         <div class="screen-modal hidden" id="screen-gameover">
           <div class="gameover-card">
-            <!-- Decorative Fun Corner Sparkles -->
-            <div class="card-sparkle sparkle-top-left">✨</div>
-            <div class="card-sparkle sparkle-top-right">⭐</div>
-
-            <!-- Top Trophy & Rank Header -->
+            <!-- Top Trophy & Final Score Hero Header -->
             <div class="gameover-header">
               <div class="gameover-trophy-ring">
                 <span class="gameover-trophy-icon">🏆</span>
-                <span class="trophy-sparkle-mini">✨</span>
               </div>
               <h2 class="gameover-title">SCOR FINAL</h2>
-              <div class="gameover-rank-pill" id="gameover-rank">🥇 KEBAB MASTER</div>
+              <div class="gameover-score-hero">
+                <span class="gameover-score-big" id="final-score">0</span>
+                <span class="gameover-score-sublabel">PUNCTE</span>
+              </div>
+              <div class="gameover-rank-pill" id="gameover-rank">🥉 DONER APPRENTICE</div>
             </div>
 
-            <!-- 3 Fun Arcade Stat Pods (Zero Lumanari, Zero Emoji Doner) -->
-            <div class="stats-arcade-grid">
-              <!-- Pod 1: Scor -->
-              <div class="stat-pod stat-pod-blue">
-                <div class="stat-pod-header">
-                  <span class="stat-mini-icon">🎯</span>
-                  <span class="stat-label">SCOR</span>
+            <!-- Clean Stats Box (2 Coloane Perfect Echilibrate: Doneri Meso + Record, Fara Lumanari!) -->
+            <div class="stats-royal-box">
+              <div class="stat-item-col">
+                <div class="stat-title-row">
+                  <img class="stat-doner-img" src="doner_clean.png" alt="Doner Meso">
+                  <span class="stat-title">DONERI</span>
                 </div>
-                <div class="stat-big-num" id="final-score">0</div>
-                <span class="stat-subtag">puncte</span>
+                <span class="stat-big-num stat-gold" id="final-doners">0</span>
               </div>
-
-              <!-- Pod 2: Doneri (Meso Coin, No emoji) -->
-              <div class="stat-pod stat-pod-gold">
-                <div class="stat-pod-header">
-                  <img class="stat-mini-coin" src="doner_clean.png" alt="Döner">
-                  <span class="stat-label">DÖNERI</span>
+              <div class="stat-divider"></div>
+              <div class="stat-item-col">
+                <div class="stat-title-row">
+                  <span class="stat-trophy-mini">🏆</span>
+                  <span class="stat-title">RECORD</span>
                 </div>
-                <div class="stat-big-num stat-gold" id="final-doners">0</div>
-                <span class="stat-subtag">colectați</span>
-              </div>
-
-              <!-- Pod 3: Record -->
-              <div class="stat-pod stat-pod-amber">
-                <div class="stat-pod-header">
-                  <span class="stat-mini-icon">👑</span>
-                  <span class="stat-label">RECORD</span>
-                </div>
-                <div class="stat-big-num stat-amber" id="best-score">0</div>
-                <span class="stat-subtag">personal</span>
+                <span class="stat-big-num stat-amber" id="best-score">0</span>
               </div>
             </div>
 
             <!-- New Record Toast (dynamically visible) -->
             <div id="new-record-alert" class="new-record-pill hidden">
-              <span>🎉 NOU RECORD PERSONAL! 🔥</span>
+              <span>🎉 NOU RECORD PERSONAL! 🚀</span>
             </div>
 
             <!-- Last Unlocked Restaurant Location Badge -->
             <div class="last-location-card" id="last-location-container">
-              <div class="loc-card-badge">
-                <span class="loc-pin">📍</span>
-                <span class="loc-mini-title">DESTINAȚIE ATINSĂ</span>
-              </div>
+              <span class="loc-mini-title">📍 ULTIMA DESTINAȚIE MESOPOTAMIA:</span>
               <span class="loc-mini-name" id="gameover-last-loc">Start Călătorie</span>
             </div>
 
@@ -177,7 +159,7 @@
 
               <button class="btn-game-secondary" id="btn-home">
                 <span class="btn-icon">🏠</span>
-                <span class="btn-text">Meniu Principal</span>
+              <span class="btn-text">Meniu Principal</span>
               </button>
             </div>
           </div>
@@ -240,6 +222,6 @@
       document.querySelectorAll('img[src="doner_clean.png"]').forEach(img => img.src = GAME_ASSETS.doner);
     }
   </script>
-  <script src="game.js?v=20.0"></script>
+  <script src="game.js?v=21.0"></script>
 </body>
 </html>
